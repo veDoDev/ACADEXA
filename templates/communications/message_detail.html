@@ -1,0 +1,39 @@
+{% extends 'base/base.html' %}
+{% block title %}Message{% endblock %}
+{% block page_title %}Message{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ message.subject|default:"No Subject" }}</h1>
+    <p>From {{ message.sender.get_full_name }} · {{ message.sent_at|date:"d M Y, H:i" }}</p>
+  </div>
+  <div style="display:flex; gap:12px;">
+    <a href="{% url 'send_message_to' message.sender.pk %}" class="btn btn-gold btn-sm">↩ Reply</a>
+    <a href="{% url 'inbox' %}" class="btn btn-outline btn-sm">← Inbox</a>
+  </div>
+</div>
+
+{% if message.is_flagged %}
+<div class="alert alert-warning">
+  ⚠ This message was flagged by the automated moderation system. Reason: {{ message.flag_reason }}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="sidebar-avatar" style="width:36px; height:36px; font-size:0.85rem;">
+        {{ message.sender.first_name|first }}{{ message.sender.last_name|first }}
+      </div>
+      <div>
+        <div style="color:var(--gold-light); font-weight:600;">{{ message.sender.get_full_name }}</div>
+        <div style="color:rgba(255,255,255,0.45); font-size:0.75rem;">{{ message.sender.role|capfirst }} · {{ message.sent_at|date:"d M Y, H:i" }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <p style="line-height:1.8; white-space:pre-wrap;">{{ message.body }}</p>
+  </div>
+</div>
+{% endblock %}

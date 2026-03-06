@@ -1,0 +1,120 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+{% block page_title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Good to see you, {{ user.first_name }} 👋</h1>
+    <p>Here's an overview of your academic activity</p>
+  </div>
+  <a href="{% url 'assignment_create' %}" class="btn btn-gold">＋ New Assignment</a>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-icon">📋</span>
+    <div class="stat-value">{{ total_assignments }}</div>
+    <div class="stat-label">Active Assignments</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">📥</span>
+    <div class="stat-value">{{ total_submissions }}</div>
+    <div class="stat-label">Total Submissions</div>
+  </div>
+  <div class="stat-card warning">
+    <span class="stat-icon">⏳</span>
+    <div class="stat-value">{{ pending_review }}</div>
+    <div class="stat-label">Pending Review</div>
+  </div>
+  <div class="stat-card danger">
+    <span class="stat-icon">🚨</span>
+    <div class="stat-value">{{ flagged }}</div>
+    <div class="stat-label">High Plagiarism</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">📈</span>
+    <div class="stat-value">{{ avg_plagiarism }}%</div>
+    <div class="stat-label">Avg Plagiarism Score</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:24px;">
+  <!-- RECENT SUBMISSIONS -->
+  <div class="card">
+    <div class="card-header">
+      <h3>📊 Recent Submissions</h3>
+      <a href="{% url 'all_submissions' %}" class="btn btn-outline btn-sm" style="color:var(--gold-light); border-color:rgba(200,153,58,0.4);">View All</a>
+    </div>
+    <div style="overflow-x:auto;">
+      {% if recent_submissions %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Assignment</th>
+            <th>Plagiarism</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in recent_submissions %}
+          <tr>
+            <td>
+              <div style="font-weight:600; font-size:0.85rem;">{{ sub.student.get_full_name }}</div>
+              <div style="color:var(--text-muted); font-size:0.75rem;">{{ sub.submitted_at|date:"d M, H:i" }}</div>
+            </td>
+            <td style="font-size:0.85rem;">{{ sub.assignment.title|truncatechars:30 }}</td>
+            <td>
+              {% if sub.plagiarism_score is not None %}
+              <div class="plag-meter">
+                <div class="plag-bar-wrap">
+                  <div class="plag-bar {{ sub.plagiarism_level }}" style="width:{{ sub.plagiarism_score }}%"></div>
+                </div>
+                <span class="plag-pct {{ sub.plagiarism_level }}">{{ sub.plagiarism_score }}%</span>
+              </div>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td><span class="badge badge-{{ sub.status }}">{{ sub.get_status_display }}</span></td>
+            <td><a href="{% url 'submission_detail' sub.pk %}" class="btn btn-outline btn-sm">Review</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="card-body" style="text-align:center; color:var(--text-muted); padding:40px;">
+        No submissions yet. Share your assignments with students.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- MY ASSIGNMENTS -->
+  <div class="card">
+    <div class="card-header">
+      <h3>📋 My Assignments</h3>
+      <a href="{% url 'assignment_create' %}" class="btn btn-gold btn-sm">＋ Add</a>
+    </div>
+    <div>
+      {% if assignments %}
+        {% for a in assignments|slice:":6" %}
+        <a href="{% url 'assignment_detail' a.pk %}" style="display:block; padding:16px 20px; border-bottom:1px solid var(--border); text-decoration:none; transition:background 0.15s;" onmouseover="this.style.background='rgba(200,153,58,0.05)'" onmouseout="this.style.background=''">
+          <div style="font-weight:600; color:var(--navy); font-size:0.88rem;">{{ a.title }}</div>
+          <div style="display:flex; gap:12px; margin-top:6px;">
+            <span style="font-size:0.73rem; color:var(--text-muted);">📅 {{ a.deadline|date:"d M Y" }}</span>
+            <span style="font-size:0.73rem; color:var(--gold);">{{ a.submission_count }} submissions</span>
+          </div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="card-body" style="text-align:center; color:var(--text-muted); padding:40px;">
+          No assignments yet. <a href="{% url 'assignment_create' %}" class="auth-link">Create one →</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

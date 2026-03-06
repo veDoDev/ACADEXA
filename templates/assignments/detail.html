@@ -1,0 +1,98 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block page_title %}Assignment Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ assignment.title }}</h1>
+    {% if assignment.subject %}<p style="color:var(--gold); font-weight:600; text-transform:uppercase; letter-spacing:1px; font-size:0.8rem;">{{ assignment.subject }}</p>{% endif %}
+  </div>
+  <a href="{% url 'assignment_list' %}" class="btn btn-outline">← Back</a>
+</div>
+
+<div style="display:grid; grid-template-columns:1.5fr 1fr; gap:24px;">
+  <div>
+    <div class="card mb-3">
+      <div class="card-header"><h3>📄 Assignment Description</h3></div>
+      <div class="card-body">
+        <p style="line-height:1.8; color:var(--text-main);">{{ assignment.description }}</p>
+      </div>
+    </div>
+
+    {% if user.is_student %}
+      {% if user_submission %}
+        <div class="card" style="border:2px solid var(--success);">
+          <div class="card-header" style="background:var(--success);"><h3 style="color:white;">✅ Already Submitted</h3></div>
+          <div class="card-body">
+            <p>Submitted on {{ user_submission.submitted_at|date:"d M Y, H:i" }}</p>
+            <a href="{% url 'submission_detail' user_submission.pk %}" class="btn btn-primary mt-2">View Results →</a>
+          </div>
+        </div>
+      {% else %}
+        <div class="card" style="border:2px solid var(--gold);">
+          <div class="card-header"><h3>🚀 Submit Your Work</h3></div>
+          <div class="card-body">
+            <p style="color:var(--text-muted); margin-bottom:16px;">Upload your file or paste your answer to submit for AI analysis.</p>
+            <a href="{% url 'submit_assignment' assignment.pk %}" class="btn btn-gold">Submit Assignment →</a>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    {% if user.is_teacher and submissions %}
+    <div class="card">
+      <div class="card-header">
+        <h3>📊 Submissions ({{ submissions|length }})</h3>
+        <a href="{% url 'all_submissions' %}" class="btn btn-outline btn-sm" style="color:var(--gold-light); border-color:rgba(200,153,58,0.4);">View All</a>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Student</th><th>Submitted</th><th>Plagiarism</th><th>Quality</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for sub in submissions %}
+            <tr>
+              <td style="font-weight:600; font-size:0.85rem;">{{ sub.student.get_full_name }}</td>
+              <td style="font-size:0.8rem; color:var(--text-muted);">{{ sub.submitted_at|date:"d M, H:i" }}</td>
+              <td>
+                {% if sub.plagiarism_score is not None %}
+                <span class="plag-pct {{ sub.plagiarism_level }}">{{ sub.plagiarism_score }}%</span>
+                {% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+              <td>{% if sub.quality_score %}{{ sub.quality_score }}{% else %}—{% endif %}</td>
+              <td><span class="badge badge-{{ sub.status }}">{{ sub.get_status_display }}</span></td>
+              <td><a href="{% url 'submission_detail' sub.pk %}" class="btn btn-outline btn-sm">Review</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="card mb-3">
+      <div class="card-header"><h3>📌 Details</h3></div>
+      <div class="card-body">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div><div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px;">Teacher</div><div style="font-weight:600;">{{ assignment.teacher.get_full_name }}</div></div>
+          <div><div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px;">Deadline</div><div style="font-weight:600; color:var(--danger);">{{ assignment.deadline|date:"d M Y, H:i" }}</div></div>
+          <div><div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px;">Max Marks</div><div style="font-weight:600;">{{ assignment.max_marks }}</div></div>
+          <div><div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px;">Posted</div><div>{{ assignment.created_at|date:"d M Y" }}</div></div>
+          {% if user.is_teacher %}<div><div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px;">Submissions</div><div style="font-weight:600; color:var(--gold);">{{ assignment.submission_count }}</div></div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--navy); border:1px solid var(--gold);">
+      <div class="card-body">
+        <div style="color:var(--gold); font-size:0.7rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px;">🤖 AI Analysis</div>
+        <p style="color:rgba(255,255,255,0.75); font-size:0.85rem; line-height:1.6;">
+          On submission, Acadexa automatically generates a reference solution using Gemini AI, then compares the student's work for plagiarism and evaluates content quality.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

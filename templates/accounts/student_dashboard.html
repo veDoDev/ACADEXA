@@ -1,0 +1,103 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+{% block page_title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Welcome back, {{ user.first_name }} 📚</h1>
+    <p>Track your submissions and pending assignments</p>
+  </div>
+  <a href="{% url 'send_message' %}" class="btn btn-outline">✉ Message Teacher</a>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-icon">✅</span>
+    <div class="stat-value">{{ total_submitted }}</div>
+    <div class="stat-label">Submitted</div>
+  </div>
+  <div class="stat-card warning">
+    <span class="stat-icon">📌</span>
+    <div class="stat-value">{{ available_assignments|length }}</div>
+    <div class="stat-label">Pending Assignments</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon">✉</span>
+    <div class="stat-value">{{ unread_messages }}</div>
+    <div class="stat-label">Unread Messages</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+  <!-- PENDING ASSIGNMENTS -->
+  <div class="card">
+    <div class="card-header">
+      <h3>📌 Pending Assignments</h3>
+    </div>
+    <div>
+      {% if available_assignments %}
+        {% for a in available_assignments %}
+        <div style="padding:18px 20px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-weight:600; color:var(--navy); font-size:0.9rem;">{{ a.title }}</div>
+              <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
+                By {{ a.teacher.get_full_name }} · Due {{ a.deadline|date:"d M Y, H:i" }}
+              </div>
+              {% if a.subject %}<div style="font-size:0.72rem; color:var(--gold); margin-top:3px;">{{ a.subject }}</div>{% endif %}
+            </div>
+            <a href="{% url 'submit_assignment' a.pk %}" class="btn btn-gold btn-sm">Submit →</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="card-body" style="text-align:center; color:var(--text-muted); padding:40px;">
+          🎉 All caught up! No pending assignments.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- MY SUBMISSIONS -->
+  <div class="card">
+    <div class="card-header">
+      <h3>📊 My Submissions</h3>
+    </div>
+    <div style="overflow-x:auto;">
+      {% if submissions %}
+      <table class="data-table">
+        <thead>
+          <tr><th>Assignment</th><th>Plagiarism</th><th>Quality</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for sub in submissions %}
+          <tr>
+            <td style="font-size:0.85rem; font-weight:500;">{{ sub.assignment.title|truncatechars:25 }}</td>
+            <td>
+              {% if sub.plagiarism_score is not None %}
+              <span class="plag-pct {{ sub.plagiarism_level }}">{{ sub.plagiarism_score }}%</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td>
+              {% if sub.quality_score is not None %}
+              <span style="font-weight:600; color:var(--navy);">{{ sub.quality_score }}/100</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td><span class="badge badge-{{ sub.status }}">{{ sub.get_status_display }}</span></td>
+            <td><a href="{% url 'submission_detail' sub.pk %}" class="btn btn-outline btn-sm">View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="card-body" style="text-align:center; color:var(--text-muted); padding:40px;">
+          No submissions yet. Start by submitting an assignment.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

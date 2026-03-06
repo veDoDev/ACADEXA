@@ -1,0 +1,71 @@
+{% extends 'base/base.html' %}
+{% block title %}All Submissions{% endblock %}
+{% block page_title %}All Submissions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>All Submissions</h1>
+    <p>Review and evaluate student submissions across all assignments</p>
+  </div>
+</div>
+
+<div class="card">
+  <div style="overflow-x:auto;">
+    {% if submissions %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Assignment</th>
+          <th>Submitted</th>
+          <th>Plagiarism</th>
+          <th>Quality</th>
+          <th>Status</th>
+          <th>Marks</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in submissions %}
+        <tr>
+          <td>
+            <div style="font-weight:600; font-size:0.85rem;">{{ sub.student.get_full_name }}</div>
+            <div style="font-size:0.73rem; color:var(--text-muted);">{{ sub.student.department }}</div>
+          </td>
+          <td style="font-size:0.85rem;">{{ sub.assignment.title|truncatechars:35 }}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">{{ sub.submitted_at|date:"d M Y" }}</td>
+          <td>
+            {% if sub.plagiarism_score is not None %}
+            <div class="plag-meter">
+              <div class="plag-bar-wrap" style="min-width:60px;">
+                <div class="plag-bar {{ sub.plagiarism_level }}" style="width:{{ sub.plagiarism_score }}%"></div>
+              </div>
+              <span class="plag-pct {{ sub.plagiarism_level }}">{{ sub.plagiarism_score }}%</span>
+            </div>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td>
+            {% if sub.quality_score %}
+            <span style="font-weight:600; color:{% if sub.quality_score >= 70 %}var(--success){% elif sub.quality_score >= 40 %}var(--warning){% else %}var(--danger){% endif %};">{{ sub.quality_score }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="badge badge-{{ sub.status }}">{{ sub.get_status_display }}</span></td>
+          <td>
+            {% if sub.marks_awarded is not None %}{{ sub.marks_awarded }}/{{ sub.assignment.max_marks }}{% else %}—{% endif %}
+          </td>
+          <td><a href="{% url 'submission_detail' sub.pk %}" class="btn btn-outline btn-sm">Review</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center; padding:60px; color:var(--text-muted);">
+      <div style="font-size:3rem; margin-bottom:16px;">📊</div>
+      <h3 style="font-family:'Playfair Display',serif; color:var(--navy);">No Submissions Yet</h3>
+      <p>Students haven't submitted anything yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base/base.html' %}
+{% block title %}Submit - {{ assignment.title }}{% endblock %}
+{% block page_title %}Submit Assignment{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ assignment.title }}</h1>
+    <p>Submit your work for AI-powered analysis</p>
+  </div>
+  <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-outline">← Back</a>
+</div>
+
+<div style="display:grid; grid-template-columns:1.5fr 1fr; gap:24px;">
+  <div class="card">
+    <div class="card-header"><h3>📤 Your Submission</h3></div>
+    <div class="card-body">
+      {% if form.errors %}
+        <div class="alert alert-error">
+          {% for field in form %}{% for error in field.errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+          {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label">Upload File (PDF, DOCX, TXT)</label>
+          {{ form.file }}
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">PDF and DOCX text will be automatically extracted for analysis.</div>
+        </div>
+
+        <div style="text-align:center; padding:12px 0; color:var(--text-muted); font-size:0.85rem;">— or —</div>
+
+        <div class="form-group">
+          <label class="form-label">Paste Your Answer</label>
+          {{ form.text_content }}
+        </div>
+
+        <div style="background:rgba(200,153,58,0.08); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; margin-bottom:20px;">
+          <div style="font-size:0.78rem; font-weight:600; color:var(--navy); margin-bottom:6px;">🤖 What happens after you submit?</div>
+          <ul style="font-size:0.8rem; color:var(--text-muted); padding-left:16px; line-height:1.9;">
+            <li>Gemini AI generates a reference solution for this assignment</li>
+            <li>Your work is compared for similarity (plagiarism score)</li>
+            <li>Content quality is assessed using NLP analysis</li>
+            <li>Personalized AI feedback is generated for your submission</li>
+          </ul>
+        </div>
+
+        <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center; padding:14px;">
+          🚀 Submit & Analyze
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card mb-3">
+      <div class="card-header"><h3>📋 Assignment Brief</h3></div>
+      <div class="card-body">
+        <p style="font-size:0.87rem; line-height:1.7; color:var(--text-main);">{{ assignment.description|truncatechars:300 }}</p>
+        <hr class="divider">
+        <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+          <span class="text-muted">Deadline</span>
+          <span style="font-weight:600; color:var(--danger);">{{ assignment.deadline|date:"d M Y" }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:8px;">
+          <span class="text-muted">Max Marks</span>
+          <span style="font-weight:600;">{{ assignment.max_marks }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--navy);">
+      <div class="card-body">
+        <div style="color:var(--gold); font-size:0.68rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px;">Academic Integrity</div>
+        <p style="color:rgba(255,255,255,0.7); font-size:0.82rem; line-height:1.7;">
+          Submissions are automatically screened for plagiarism. High similarity with existing sources will flag your submission for teacher review. Ensure your work is original.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

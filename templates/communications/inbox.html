@@ -1,0 +1,38 @@
+{% extends 'base/base.html' %}
+{% block title %}Inbox{% endblock %}
+{% block page_title %}Inbox{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Inbox</h1>
+    <p>Your academic messages</p>
+  </div>
+  <a href="{% url 'send_message' %}" class="btn btn-gold">✏ New Message</a>
+</div>
+
+<div class="card">
+  {% if messages_list %}
+    {% for msg in messages_list %}
+    <a href="{% url 'message_detail' msg.pk %}" class="message-item {% if not msg.is_read %}unread{% endif %}">
+      {% if not msg.is_read %}<div class="unread-dot"></div>{% else %}<div style="width:8px;"></div>{% endif %}
+      <div style="flex:1; min-width:0;">
+        <div class="msg-from">{{ msg.sender.get_full_name }}</div>
+        <div class="msg-subject">
+          {% if msg.subject %}{{ msg.subject }}{% else %}<em>No subject</em>{% endif %}
+          {% if msg.is_flagged %}<span class="badge badge-flagged" style="margin-left:8px;">⚠ Flagged</span>{% endif %}
+        </div>
+      </div>
+      <div class="msg-time">{{ msg.sent_at|date:"d M, H:i" }}</div>
+    </a>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center; padding:60px; color:var(--text-muted);">
+      <div style="font-size:3rem; margin-bottom:16px;">✉️</div>
+      <h3 style="font-family:'Playfair Display',serif; color:var(--navy);">No Messages</h3>
+      <p>Your inbox is empty.</p>
+      <a href="{% url 'send_message' %}" class="btn btn-gold" style="margin-top:20px;">Send First Message</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

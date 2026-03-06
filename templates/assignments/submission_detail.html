@@ -1,0 +1,189 @@
+{% extends 'base/base.html' %}
+{% block title %}Submission Analysis{% endblock %}
+{% block page_title %}Submission Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ submission.assignment.title }}</h1>
+    <p>Submitted by {{ submission.student.get_full_name }} · {{ submission.submitted_at|date:"d M Y, H:i" }}</p>
+  </div>
+  <a href="{% url 'assignment_detail' submission.assignment.pk %}" class="btn btn-outline">← Back</a>
+</div>
+
+<!-- RESULT HERO -->
+<div class="result-hero mb-3">
+  <div style="display:flex; align-items:center; gap:32px; flex-wrap:wrap;">
+    <!-- Plagiarism Ring -->
+    <div class="score-ring {{ submission.plagiarism_level }}">
+      <span class="score-num">{{ submission.plagiarism_score|default:"—" }}{% if submission.plagiarism_score is not None %}<span style="font-size:1rem;">%</span>{% endif %}</span>
+      <span class="score-lbl">Plagiarism</span>
+    </div>
+
+    <!-- Quality Ring -->
+    <div class="score-ring low" style="{% if submission.quality_score >= 70 %}border-color:var(--success);background:rgba(39,174,96,0.15){% elif submission.quality_score >= 40 %}border-color:var(--warning);background:rgba(230,126,34,0.15){% else %}border-color:var(--danger);background:rgba(192,57,43,0.15){% endif %}">
+      <span class="score-num" style="{% if submission.quality_score >= 70 %}color:#58D68D{% elif submission.quality_score >= 40 %}color:#F39C12{% else %}color:#FF6B5B{% endif %}">
+        {{ submission.quality_score|default:"—" }}
+      </span>
+      <span class="score-lbl">Quality</span>
+    </div>
+
+    <div style="flex:1; min-width:200px;">
+      <div style="font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--gold-light); margin-bottom:8px;">
+        {% if submission.plagiarism_level == 'high' %}
+          🚨 High Plagiarism Detected
+        {% elif submission.plagiarism_level == 'medium' %}
+          ⚠️ Moderate Similarity Found
+        {% elif submission.plagiarism_level == 'low' %}
+          ✅ Original Work
+        {% else %}
+          📊 Analysis Complete
+        {% endif %}
+      </div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="badge badge-{{ submission.status }}">{{ submission.get_status_display }}</span>
+        {% if submission.marks_awarded is not None %}
+        <span style="font-size:0.85rem; color:var(--gold-light);">🏆 {{ submission.marks_awarded }} / {{ submission.assignment.max_marks }} marks</span>
+        {% endif %}
+      </div>
+      <div style="font-size:0.82rem; color:rgba(255,255,255,0.5);">
+        Assignment by {{ submission.assignment.teacher.get_full_name }} · Max {{ submission.assignment.max_marks }} marks
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1.5fr 1fr; gap:24px;">
+  <div>
+    <!-- AI FEEDBACK -->
+    {% if submission.ai_feedback %}
+    <div class="ai-box mb-3">
+      <div class="ai-label">✨ Gemini AI Feedback</div>
+      <p>{{ submission.ai_feedback }}</p>
+    </div>
+    {% endif %}
+
+    <!-- TEACHER REMARKS -->
+    {% if submission.teacher_remarks %}
+    <div class="card mb-3" style="border:2px solid var(--gold);">
+      <div class="card-header"><h3>👨‍🏫 Teacher's Remarks</h3></div>
+      <div class="card-body">
+        <p style="line-height:1.7;">{{ submission.teacher_remarks }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- TEACHER REVIEW FORM -->
+    {% if user.is_teacher and remark_form %}
+    <div class="card mb-3">
+      <div class="card-header"><h3>✏️ Add Review</h3></div>
+      <div class="card-body">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">Remarks</label>
+            {{ remark_form.teacher_remarks }}
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Marks Awarded</label>
+              {{ remark_form.marks_awarded }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              {{ remark_form.status }}
+            </div>
+          </div>
+          <button type="submit" class="btn btn-gold">Save Review →</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- STUDENT SUBMISSION TEXT -->
+    {% if submission.text_content or submission.extracted_text %}
+    <div class="card">
+      <div class="card-header"><h3>📝 Submitted Content</h3></div>
+      <div class="card-body">
+        <div style="background:var(--cream); border-radius:var(--radius-sm); padding:16px; max-height:300px; overflow-y:auto; font-size:0.85rem; line-height:1.7; white-space:pre-wrap; border:1px solid var(--border);">{{ submission.extracted_text|default:submission.text_content }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <!-- PLAGIARISM DETAIL -->
+    <div class="card mb-3">
+      <div class="card-header"><h3>🔍 Plagiarism Analysis</h3></div>
+      <div class="card-body">
+        {% if submission.plagiarism_score is not None %}
+        <div class="plag-meter" style="margin-bottom:12px; gap:16px;">
+          <div class="plag-bar-wrap" style="height:14px;">
+            <div class="plag-bar {{ submission.plagiarism_level }}" style="width:{{ submission.plagiarism_score }}%; height:100%;"></div>
+          </div>
+        </div>
+        <div style="font-size:2rem; font-weight:700; font-family:'Playfair Display',serif; color:{% if submission.plagiarism_level == 'high' %}var(--danger){% elif submission.plagiarism_level == 'medium' %}var(--warning){% else %}var(--success){% endif %};">
+          {{ submission.plagiarism_score }}%
+        </div>
+        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
+          {% if submission.plagiarism_level == 'high' %}Significant similarity detected — flagged for review{% elif submission.plagiarism_level == 'medium' %}Moderate similarity — may require attention{% else %}Low similarity — appears to be original work{% endif %}
+        </div>
+        <hr class="divider">
+        <div style="font-size:0.78rem; color:var(--text-muted);">Compared against: Gemini AI-generated reference solution</div>
+        {% else %}
+        <div style="text-align:center; color:var(--text-muted);">Analysis not available</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- QUALITY DETAIL -->
+    <div class="card mb-3">
+      <div class="card-header"><h3>⭐ Quality Score</h3></div>
+      <div class="card-body">
+        {% if submission.quality_score is not None %}
+        <div style="font-size:2rem; font-weight:700; font-family:'Playfair Display',serif; color:{% if submission.quality_score >= 70 %}var(--success){% elif submission.quality_score >= 40 %}var(--warning){% else %}var(--danger){% endif %};">
+          {{ submission.quality_score }}<span style="font-size:1rem; color:var(--text-muted);">/100</span>
+        </div>
+        <div style="margin-top:10px; font-size:0.78rem; color:var(--text-muted);">
+          Based on word count, sentence structure, and vocabulary richness via NLP analysis.
+        </div>
+        {% else %}
+        <div style="text-align:center; color:var(--text-muted);">Not available</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- AI SOLUTION -->
+    {% if submission.generated_solution and user.is_teacher %}
+    <div class="card">
+      <div class="card-header"><h3>🤖 AI Reference Solution</h3></div>
+      <div class="card-body">
+        <div style="background:var(--navy); border-radius:var(--radius-sm); padding:14px; max-height:250px; overflow-y:auto; font-size:0.8rem; line-height:1.6; color:rgba(255,255,255,0.8); white-space:pre-wrap;">{{ submission.generated_solution|truncatechars:800 }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if submission.file %}
+    <div class="card mt-2">
+      <div class="card-body">
+        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:8px;">Uploaded File</div>
+        <a href="{{ submission.file.url }}" class="btn btn-outline btn-sm" download>📎 Download Submission</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Animate progress bars on load
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.plag-bar').forEach(bar => {
+      const w = bar.style.width;
+      bar.style.width = '0';
+      setTimeout(() => { bar.style.width = w; }, 200);
+    });
+  });
+</script>
+{% endblock %}

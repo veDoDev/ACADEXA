@@ -1,0 +1,47 @@
+{% extends 'base/base.html' %}
+{% block title %}Assignments{% endblock %}
+{% block page_title %}Assignments{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Assignments</h1>
+    <p>{% if user.is_teacher %}Manage your assignments and view submissions{% else %}View and submit your assignments{% endif %}</p>
+  </div>
+  {% if user.is_teacher %}<a href="{% url 'assignment_create' %}" class="btn btn-gold">＋ Create Assignment</a>{% endif %}
+</div>
+
+{% if assignments %}
+<div class="assignment-grid">
+  {% for a in assignments %}
+  <a href="{% url 'assignment_detail' a.pk %}" class="assignment-card">
+    <div class="assignment-card-header">
+      <h3>{{ a.title }}</h3>
+      {% if a.subject %}<div style="font-size:0.72rem; color:var(--gold); margin-top:4px; text-transform:uppercase; letter-spacing:1px;">{{ a.subject }}</div>{% endif %}
+    </div>
+    <div class="assignment-card-body">
+      <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.6;">{{ a.description|truncatechars:100 }}</p>
+      <div class="assignment-meta">
+        <span class="meta-item">📅 Due {{ a.deadline|date:"d M Y" }}</span>
+        <span class="meta-item">🏆 {{ a.max_marks }} marks</span>
+        {% if user.is_teacher %}<span class="meta-item" style="color:var(--gold);">{{ a.submission_count }} submissions</span>{% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body" style="text-align:center; padding:60px; color:var(--text-muted);">
+    <div style="font-size:3rem; margin-bottom:16px;">📋</div>
+    <h3 style="font-family:'Playfair Display',serif; color:var(--navy); margin-bottom:8px;">No Assignments Yet</h3>
+    {% if user.is_teacher %}
+    <p>Create your first assignment to get started.</p>
+    <a href="{% url 'assignment_create' %}" class="btn btn-gold" style="margin-top:20px;">＋ Create Assignment</a>
+    {% else %}
+    <p>No assignments have been posted yet. Check back later.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

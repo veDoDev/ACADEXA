@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Acadexa{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/acadexa.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<div class="layout">
+
+  <aside class="sidebar">
+    <a href="{% url 'dashboard' %}" class="sidebar-logo">
+      <div class="logo-icon">Ac</div>
+      <span class="logo-text">acadexa<span class="logo-cursor"></span></span>
+    </a>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+      <div>
+        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+        <span class="user-role {{ user.role }}">{{ user.role }}</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">// main</div>
+      <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="nav-icon">⊞</span> Dashboard
+      </a>
+      <a href="{% url 'assignment_list' %}" class="nav-link">
+        <span class="nav-icon">▤</span> Assignments
+      </a>
+
+      {% if user.is_teacher %}
+      <div class="nav-section-label">// tools</div>
+      <a href="{% url 'assignment_create' %}" class="nav-link">
+        <span class="nav-icon">+</span> New Assignment
+      </a>
+      <a href="{% url 'all_submissions' %}" class="nav-link {% if request.resolver_match.url_name == 'all_submissions' %}active{% endif %}">
+        <span class="nav-icon">◈</span> All Submissions
+      </a>
+      {% endif %}
+
+      <div class="nav-section-label">// comms</div>
+      <a href="{% url 'inbox' %}" class="nav-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}">
+        <span class="nav-icon">⌘</span> Inbox
+      </a>
+      <a href="{% url 'send_message' %}" class="nav-link">
+        <span class="nav-icon">↗</span> Compose
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="{% url 'logout' %}" class="nav-link" style="color: var(--text-4);">
+        <span class="nav-icon">←</span> Sign out
+      </a>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="breadcrumb">
+        <span>acadexa</span>
+        <span class="sep">/</span>
+        <span class="current">{% block page_title %}dashboard{% endblock %}</span>
+      </div>
+      <div class="topbar-actions">
+        {% if user.is_teacher %}
+          <a href="{% url 'assignment_create' %}" class="btn btn-primary btn-sm">+ new assignment</a>
+        {% else %}
+          <a href="{% url 'send_message' %}" class="btn btn-outline btn-sm">↗ message</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="page-body">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+</div>
+
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

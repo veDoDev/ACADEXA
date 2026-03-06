@@ -1,0 +1,387 @@
+This document provides a comprehensive solution to the given networking assignment, covering IPv4 and IPv6 protocols, routing algorithms, TCP mechanisms, and application layer protocols.
+
+---
+
+## 1. IPv4 Header Format, IPv6 Header Format, and Comparison
+
+Internet Protocol (IP) headers are crucial components of IP packets, containing essential information for routing and delivering data across networks. IPv4 and IPv6 represent two distinct versions of the Internet Protocol, each with its own header structure.
+
+### 1.1 IPv4 Header Format
+
+The IPv4 header is a fixed-size header (20 bytes) with an optional variable-length options field. It contains critical information necessary for routing a packet to its destination.
+
+**Diagram of IPv4 Header Format:**
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|Version|  IHL  |Type of Service|          Total Length         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Identification        |Flags|      Fragment Offset    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Time to Live |    Protocol   |        Header Checksum        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Source IP Address                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Destination IP Address                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Options (if any)                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Padding (if any)                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+**Description of Fields:**
+
+*   **Version (4 bits):** Indicates the IP protocol version, always `0100` for IPv4.
+*   **IHL (Internet Header Length) (4 bits):** Specifies the length of the IP header in 32-bit words. Minimum value is 5 (for a 20-byte header), maximum is 15 (for a 60-byte header with options).
+*   **Type of Service (ToS) / Differentiated Services Code Point (DSCP) and Explicit Congestion Notification (ECN) (8 bits):** Originally ToS, now used for DSCP (6 bits for QoS) and ECN (2 bits for congestion notification).
+*   **Total Length (16 bits):** The entire length of the IP packet (header + data) in bytes. Maximum packet size is 65,535 bytes.
+*   **Identification (16 bits):** A unique identifier for each datagram. Used for reassembling fragmented datagrams.
+*   **Flags (3 bits):**
+    *   Bit 0: Reserved (must be 0).
+    *   Bit 1: Don't Fragment (DF) - If 1, the router must not fragment the packet.
+    *   Bit 2: More Fragments (MF) - If 1, indicates more fragments follow; if 0, this is the last fragment.
+*   **Fragment Offset (13 bits):** Specifies the offset of the current fragment relative to the beginning of the original unfragmented IP datagram. Measured in 8-byte units.
+*   **Time to Live (TTL) (8 bits):** A counter that decrements by one each time the packet traverses a router. When TTL reaches 0, the packet is discarded to prevent infinite loops.
+*   **Protocol (8 bits):** Indicates the next-level protocol carrying the data (e.g., 6 for TCP, 17 for UDP, 1 for ICMP).
+*   **Header Checksum (16 bits):** Used for error detection across the IP header only. Recomputed at each hop and dropped if invalid.
+*   **Source IP Address (32 bits):** The IPv4 address of the sender.
+*   **Destination IP Address (32 bits):** The IPv4 address of the intended recipient.
+*   **Options (variable, up to 40 bytes):** Optional fields for network testing, debugging, or security.
+*   **Padding (variable):** Used to ensure the IP header ends on a 32-bit boundary when options are present.
+
+### 1.2 IPv6 Header Format
+
+IPv6 features a simplified and fixed-size header of 40 bytes, streamlining processing by intermediate routers. Optional functionality is moved to separate "Extension Headers."
+
+**Diagram of IPv6 Header Format:**
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|Version| Traffic Class |           Flow Label                  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Payload Length        |  Next Header  |   Hop Limit   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+|                         Source Address                        |
+|                                                               |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+|                      Destination Address                      |
+|                                                               |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+**Description of Fields:**
+
+*   **Version (4 bits):** Indicates the IP protocol version, always `0110` for IPv6.
+*   **Traffic Class (8 bits):** Similar to IPv4's ToS field, used for Differentiated Services (DiffServ) for packet prioritization.
+*   **Flow Label (20 bits):** Used by a source to label sequences of packets for which it requests special handling by IPv6 routers, such as non-default quality of service or "real-time" service.
+*   **Payload Length (16 bits):** The length of the IPv6 payload (data + Extension Headers) in bytes. Does not include the 40-byte base header.
+*   **Next Header (8 bits):** Identifies the type of the immediately following header. This could be a transport layer protocol (e.g., TCP, UDP) or an IPv6 Extension Header.
+*   **Hop Limit (8 bits):** Replaces IPv4's TTL. Decrements by one at each hop. Packet is discarded when it reaches 0.
+*   **Source Address (128 bits):** The IPv6 address of the sender.
+*   **Destination Address (128 bits):** The IPv6 address of the intended recipient.
+
+**IPv6 Extension Headers:** IPv6 moves optional or rarely used fields into separate Extension Headers. These are placed between the main IPv6 header and the transport layer header. Examples include Hop-by-Hop Options, Routing, Fragment, Authentication, Encapsulating Security Payload, and Destination Options. This design simplifies the base header and speeds up packet processing by routers.
+
+### 1.3 Comparison of IPv4 and IPv6 Protocols
+
+| Feature                     | IPv4                                      | IPv6                                           |
+| :-------------------------- | :---------------------------------------- | :--------------------------------------------- |
+| **Address Length**          | 32-bit (e.g., `192.168.1.1`)              | 128-bit (e.g., `2001:0db8::1`)                 |
+| **Address Space**           | ~4.3 billion addresses (depleting)        | Vast (2^128 addresses)                         |
+| **Header Length**           | Variable (20-60 bytes)                    | Fixed (40 bytes)                               |
+| **Header Checksum**         | Present (recalculated at each hop)        | Absent (rely on lower/upper layer checksums)   |
+| **Fragmentation**           | Done by routers and sending host          | Only by sending host; routers drop large packets|
+| **Options Field**           | Part of main header                       | Moved to optional Extension Headers            |
+| **Quality of Service (QoS)**| ToS field (limited functionality)         | Traffic Class & Flow Label for better QoS      |
+| **Auto-configuration**      | Manual or DHCP required                   | Stateless Address Auto-configuration (SLAAC)   |
+| **Security (IPsec)**        | Optional add-on                           | Mandatory part of the protocol suite           |
+| **Network Address Translation (NAT)** | Essential for address conservation | Largely unnecessary due to vast address space  |
+| **Mobile IP**               | More complex to implement                 | Built-in support                               |
+| **Multicast**               | Group membership (IGMP)                   | More efficient and integral (MLD)              |
+| **Broadcast**               | Supported                                 | Replaced by multicast                          |
+
+---
+
+## 2. Routing Algorithms and Distance Vector Routing
+
+### 2.1 What are Routing Algorithms?
+
+Routing algorithms are essential network layer protocols responsible for determining the optimal path for data packets to travel from a source to a destination across a network. They operate by maintaining routing tables, which store information about known destinations and the next hop required to reach them. The "optimal" path is typically defined based on metrics such as hop count, bandwidth, delay, cost, or reliability.
+
+**Key characteristics of routing algorithms:**
+
+*   **Optimality:** Aims to find the "best" path based on defined metrics.
+*   **Completeness:** Must find a path to all reachable destinations.
+*   **Robustness:** Should function correctly and recover quickly in the face of network changes (link failures, new connections).
+*   **Scalability:** Must be able to handle growth in network size.
+*   **Efficiency:** Should use minimal network resources (bandwidth, CPU) for its operation.
+
+**Categories of Routing Algorithms:**
+
+*   **Static Routing:** Routes are manually configured by a network administrator and remain fixed unless changed manually. Simple for small, stable networks.
+*   **Dynamic Routing:** Routers automatically discover routes and adapt to network changes. They exchange routing information with other routers.
+    *   **Global vs. Decentralized:**
+        *   **Global (Link-State):** All routers have complete topology information (e.g., OSPF).
+        *   **Decentralized (Distance-Vector):** Routers only have partial information from neighbors (e.g., RIP).
+    *   **Intra-domain vs. Inter-domain:**
+        *   **Intra-domain (Interior Gateway Protocols - IGPs):** Used within an Autonomous System (AS) (e.g., OSPF, EIGRP, RIP).
+        *   **Inter-domain (Exterior Gateway Protocols - EGPs):** Used between different ASes (e.g., BGP).
+
+### 2.2 Distance Vector Routing Algorithm
+
+The Distance Vector routing algorithm is a dynamic, decentralized routing protocol where each router periodically shares its entire routing table (its "distance vector") with its directly connected neighbors. Each router then updates its own routing table based on the information received from its neighbors, using the Bellman-Ford equation.
+
+**Core Principle:**
+
+Each router maintains a routing table that contains:
+1.  A list of all known destination networks.
+2.  The "distance" (cost) to reach each destination.
+3.  The "next hop" router to reach that destination.
+
+The "distance" is typically measured in hop count, but can also be based on link cost.
+
+**Algorithm Steps:**
+
+1.  **Initialization:** Each router initializes its routing table. For directly connected networks, the distance is the direct link cost, and the next hop is itself (or the interface). For all other networks, the distance is set to infinity.
+2.  **Information Exchange:** Periodically, each router sends its current distance vector to all its directly connected neighbors.
+3.  **Update Process (Bellman-Ford Equation):** When a router `X` receives a distance vector from a neighbor `Y`, it updates its own table as follows:
+    *   For each destination `D` listed in `Y`'s distance vector:
+        *   Calculate a new potential distance to `D` via `Y`: `Cost(X, D) = Cost(X, Y) + Cost(Y, D)`.
+        *   If this new potential distance is less than the current distance `X` has for `D`, or if `Y` is the current next hop for `D`:
+            *   Update `X`'s routing table: `Distance to D = Cost(X, Y) + Cost(Y, D)`.
+            *   Set `Next Hop for D = Y`.
+4.  **Iteration:** Steps 2 and 3 repeat continuously. Changes in network topology (e.g., a link failure) are propagated through this iterative process until all routers converge on new optimal paths.
+
+**Example: Distance Vector Routing**
+
+Consider a simple network topology with four routers (A, B, C, D) and their link costs:
+
+```
+      (1)     (3)     (1)
+   A ----- B ----- C ----- D
+   |       |       |       |
+   (2)     (1)     (1)     (2)
+   |       |       |       |
+   E ----- F ----- G ----- H
+      (1)     (1)     (1)
+```
+*For simplicity, let's use a simpler linear topology for demonstration of iterations.*
+
+Let's assume the following network:
+```
+      (1)       (2)       (5)
+   A ----- B ----- C ----- D
+```
+Costs: Link A-B = 1, B-C = 2, C-D = 5.
+
+**Initial State (Time = 0):** Each router knows only about its directly connected neighbors.
+`DR(X)` = Distance vector of router X. `[Destination: Cost, NextHop]`
+
+*   **Router A:**
+    *   `DR(A) = { B: 1, B }`
+*   **Router B:**
+    *   `DR(B) = { A: 1, A; C: 2, C }`
+*   **Router C:**
+    *   `DR(C) = { B: 2, B; D: 5, D }`
+*   **Router D:**
+    *   `DR(D) = { C: 5, C }`
+
+**Iteration 1:** Routers exchange their initial distance vectors with neighbors.
+
+*   **Router A receives `DR(B)`:**
+    *   A learns about C via B: Cost(A,C) = Cost(A,B) + Cost(B,C) = 1 + 2 = 3. `DR(A)` updates: `C: 3, B`.
+    *   A learns about D via B: Cost(A,D) = Cost(A,B) + Cost(B,D) (B doesn't know D directly, but might in later iterations).
+*   **Router B receives `DR(A)` and `DR(C)`:**
+    *   From `DR(A)`: No new or better paths for B.
+    *   From `DR(C)`:
+        *   B learns about D via C: Cost(B,D) = Cost(B,C) + Cost(C,D) = 2 + 5 = 7. `DR(B)` updates: `D: 7, C`.
+*   **Router C receives `DR(B)` and `DR(D)`:**
+    *   From `DR(B)`:
+        *   C learns about A via B: Cost(C,A) = Cost(C,B) + Cost(B,A) = 2 + 1 = 3. `DR(C)` updates: `A: 3, B`.
+    *   From `DR(D)`: No new or better paths for C.
+*   **Router D receives `DR(C)`:**
+    *   D learns about B via C: Cost(D,B) = Cost(D,C) + Cost(C,B) = 5 + 2 = 7. `DR(D)` updates: `B: 7, C`.
+    *   D learns about A via C (path B is known through C): Cost(D,A) = Cost(D,C) + Cost(C,A) (C knows A now).
+        *   Current `DR(C)` for A is `A: 3, B`. So Cost(D,A) = 5 + 3 = 8. `DR(D)` updates: `A: 8, C`.
+
+**Updated Routing Tables (After Iteration 1):**
+
+*   **Router A:** `DR(A) = { B: 1, B; C: 3, B; D: 8, B }`
+*   **Router B:** `DR(B) = { A: 1, A; C: 2, C; D: 7, C }`
+*   **Router C:** `DR(C) = { A: 3, B; B: 2, B; D: 5, D }`
+*   **Router D:** `DR(D) = { A: 8, C; B: 7, C; C: 5, C }`
+
+This process continues iteratively until no router can find a shorter path, at which point the network has converged. For this simple linear network, convergence would complete in a few more iterations.
+
+**Challenges with Distance Vector Routing:**
+
+*   **Count-to-Infinity Problem:** In case of link failures, bad news (increased costs or unreachable destinations) propagates slowly. This can lead to routing loops where packets endlessly traverse parts of the network, as routers continue to advertise paths that are no longer valid, leading to costs incrementing to infinity.
+*   **Slow Convergence:** The time it takes for all routers to agree on new paths after a change can be significant.
+
+**Solutions to Count-to-Infinity:**
+
+*   **Poison Reverse:** If a router X routes to destination D through neighbor Y, it advertises an infinite cost for D to Y. This prevents Y from routing back through X for D if X's original path fails.
+*   **Split Horizon:** A router does not advertise a route back on the interface from which it learned that route.
+*   **Triggered Updates:** Instead of waiting for the periodic update, a router immediately sends an update when a route changes significantly.
+
+---
+
+## 3. Short Notes
+
+### (i) TCP Timers for Congestion Control
+
+TCP (Transmission Control Protocol) employs several timers crucial for its reliable data transfer and congestion control mechanisms. Congestion control aims to prevent network collapse by limiting the rate at which senders transmit data when the network is overloaded.
+
+The primary timers involved in TCP congestion control are related to **Retransmission Timeout (RTO)** and **Round-Trip Time (RTT)** estimation.
+
+1.  **Retransmission Timeout (RTO) Timer:**
+    *   **Purpose:** The RTO timer is set when a TCP segment is sent. If an acknowledgment (ACK) for that segment is not received before the RTO expires, it is assumed that the segment was lost due to network congestion (or another issue), and the segment is retransmitted.
+    *   **Mechanism:** When the RTO timer expires, TCP assumes congestion and triggers its congestion control algorithms:
+        *   **Slow Start:** The `congestion window (cwnd)` is reduced, typically to one segment.
+        *   **Exponential Backoff:** The RTO value itself is doubled for each retransmission of the same segment, up to a maximum. This prevents overwhelming a congested network with rapid retransmissions.
+    *   **Estimation:** The RTO is dynamically calculated based on the estimated Round-Trip Time (RTT) of the network connection. This is critical because a fixed RTO would be too short for some networks and too long for others.
+
+2.  **RTT Estimation Timers/Algorithms:**
+    *   **Purpose:** To accurately determine the RTO, TCP needs a reliable estimate of the RTT. This involves measuring the time between sending a segment and receiving its ACK.
+    *   **Jacobson's Algorithm (and Karn's Algorithm):**
+        *   **Smoothed RTT (SRTT):** TCP maintains a `Smoothed RTT (SRTT)` value, which is an exponentially weighted moving average of recent RTT measurements. This helps smooth out transient fluctuations.
+        *   **RTT Variation (RTTVAR):** It also keeps track of the `RTT Variation (RTTVAR)` to account for the spread of RTT values.
+        *   **RTO Calculation:** The RTO is then calculated as `SRTT + 4 * RTTVAR`. The `4 * RTTVAR` provides a safety margin to avoid premature retransmissions.
+        *   **Karn's Algorithm:** A crucial refinement states that RTT measurements should *not* be taken for retransmitted segments. If an ACK arrives for a segment that has been retransmitted, it's ambiguous whether the ACK is for the original transmission or a retransmission. Measuring RTT from such ACKs could lead to inaccurate (often artificially low) RTT estimates and thus too aggressive RTOs. Instead, if an RTO expires, the RTO is exponentially backed off, and no RTT measurement is taken until a non-retransmitted segment is acknowledged.
+
+In summary, TCP timers, particularly the RTO, are integral to its congestion control strategy. By dynamically adapting the retransmission timeout based on network RTT and backing off exponentially upon loss, TCP effectively probes network capacity and reduces transmission rates during congestion, preventing network collapse.
+
+### (ii) Nagle's Algorithm for Flow Control
+
+Nagle's Algorithm is a TCP mechanism designed to improve the efficiency of networks by reducing the number of small packets sent, often referred to as the "tinygram problem." While it influences how data "flows" onto the network, its primary goal is **efficiency and reduction of network overhead**, rather than flow control in the sense of preventing a fast sender from overwhelming a slow receiver (which is handled by TCP's advertised window mechanism).
+
+**The "Tinygram Problem":**
+
+Consider an interactive application like Telnet or SSH. When a user types a single character, the application might immediately send that character. If each character is sent in its own TCP segment, this results in:
+*   A 1-byte data payload.
+*   A 20-byte TCP header.
+*   A 20-byte IPv4 header.
+*   A 14-byte Ethernet header.
+This means 1 byte of data is transported by 54 bytes of overhead, leading to inefficient use of network bandwidth.
+
+**How Nagle's Algorithm Works:**
+
+Nagle's algorithm postpones the transmission of small TCP segments under specific conditions:
+
+1.  **Small Segment Check:** If a TCP segment contains less than the Maximum Segment Size (MSS) for the connection.
+2.  **Unacknowledged Data Check:** And there is any previously sent data on the connection that has not yet been acknowledged by the receiver.
+
+**If both conditions are true, the sender buffers the small data until:**
+
+*   An ACK arrives for the previously unacknowledged data. At this point, all buffered data is sent in a single, larger segment.
+*   The buffered data accumulates to fill a full MSS segment. The full segment is then sent immediately.
+
+**Example:**
+
+Imagine a Telnet client and server.
+*   User types 'A'. Client sends 'A' (1 byte) + headers.
+*   User types 'B'. Client, if Nagle's is active and the ACK for 'A' hasn't arrived, buffers 'B'.
+*   User types 'C'. Client buffers 'C'.
+*   ... User types 'Z'. Client buffers 'Z'.
+*   Finally, the ACK for 'A' arrives. The client then sends 'B' through 'Z' (many bytes) in a single segment.
+
+This significantly reduces the number of segments sent over the network, improving bandwidth utilization and reducing congestion caused by numerous tiny packets.
+
+**Disabling Nagle's Algorithm:**
+
+While beneficial for many applications, Nagle's algorithm can sometimes introduce a small delay, especially in highly interactive, real-time applications where every keystroke or mouse movement needs immediate feedback (e.g., online gaming, certain remote desktop protocols). In such cases, applications can disable Nagle's algorithm using the `TCP_NODELAY` socket option. Disabling it means small segments are sent immediately, regardless of unacknowledged data.
+
+---
+
+## 4. Application Layer Protocols
+
+Application layer protocols provide the interface between user applications and the network services. They define the rules and formats for how applications exchange data over a network.
+
+### (i) HTTP (Hypertext Transfer Protocol)
+
+**Purpose:** HTTP is the foundation of data communication for the World Wide Web. It is an application-layer protocol for transmitting hypermedia documents, such as HTML. It's designed for distributed, collaborative, hypermedia information systems.
+
+**Key Characteristics:**
+
+*   **Client-Server Model:** A client (typically a web browser) sends requests to a server (web server), which then sends responses back.
+*   **Request-Response Paradigm:** The client initiates communication by sending a request, and the server responds. This cycle is atomic.
+*   **Stateless by Nature:** By default, HTTP is stateless. Each request from a client to the server is treated as an independent transaction, unrelated to previous requests. While this simplifies server design, maintaining "state" (e.g., user login, shopping cart) often relies on mechanisms like cookies or session management.
+*   **Uses TCP:** HTTP relies on TCP for reliable data transfer over port 80 (for HTTP) or port 443 (for HTTPS, which is HTTP over SSL/TLS).
+*   **Message Format:** HTTP communication consists of request messages (e.g., GET, POST, PUT, DELETE) from the client and response messages (containing status codes, headers, and body) from the server.
+*   **URL/URI:** Uses Uniform Resource Locators (URLs) or Uniform Resource Identifiers (URIs) to identify resources on the web.
+
+**Operation:**
+
+1.  **Client initiates:** A user enters a URL into a web browser.
+2.  **DNS Resolution:** The browser resolves the domain name in the URL to an IP address using DNS.
+3.  **TCP Connection:** The browser establishes a TCP connection to the web server's IP address on the appropriate port (80 or 443).
+4.  **HTTP Request:** The browser sends an HTTP request message (e.g., `GET /index.html HTTP/1.1`) to the server.
+5.  **HTTP Response:** The server processes the request, retrieves the requested resource (e.g., `index.html`), and sends an HTTP response message back to the browser. The response includes a status code (e.g., `200 OK`, `404 Not Found`), headers, and the requested data.
+6.  **Display:** The browser receives the response, renders the content (e.g., displays the HTML page), and closes the TCP connection (or keeps it open for persistent connections in HTTP/1.1+).
+
+**Example:** When you type `www.example.com` into your browser, your browser sends an HTTP GET request to `example.com`'s web server, which then sends back the webpage content.
+
+### (ii) FTP (File Transfer Protocol)
+
+**Purpose:** FTP is a standard network protocol used for the transfer of computer files between a client and server on a computer network. It enables users to upload, download, delete, rename, and move files on a remote server.
+
+**Key Characteristics:**
+
+*   **Client-Server Model:** An FTP client connects to an FTP server to perform file transfer operations.
+*   **Two TCP Connections:** FTP uniquely uses two separate TCP connections:
+    *   **Control Connection (Port 21):** Used for sending commands (e.g., `USER`, `PASS`, `LIST`, `RETR`, `STOR`, `DELE`) and receiving responses between the client and server. This connection remains open for the duration of the FTP session.
+    *   **Data Connection (Port 20 or ephemeral):** Used for the actual transfer of file data. This connection is established for each file transfer (or directory listing) and typically closes after the transfer is complete.
+*   **Active vs. Passive Mode:**
+    *   **Active Mode:** The client sends its IP address and port to the server over the control connection, and the server initiates the data connection back to the client. This can be problematic with client-side firewalls.
+    *   **Passive Mode:** The client requests the server to open a port for the data connection. The server responds with the port number, and the client then initiates the data connection to that port on the server. This is more firewall-friendly.
+*   **Authentication:** Requires username and password authentication, though "anonymous FTP" allows access to public files without specific credentials.
+*   **Data Representation:** Supports ASCII mode (for text files, with character set conversion) and Binary mode (for all other file types, byte-for-byte transfer).
+
+**Operation:**
+
+1.  **Client connects:** An FTP client initiates a TCP connection to the FTP server's port 21 (control connection).
+2.  **Authentication:** The client sends username and password commands (e.g., `USER anonymous`, `PASS user@example.com`).
+3.  **Command Exchange:** The client sends commands like `LIST` (to view directory contents), `RETR filename` (to download), or `STOR filename` (to upload).
+4.  **Data Connection Setup:**
+    *   **Active:** Client sends `PORT` command with its IP and port. Server connects to the client's data port.
+    *   **Passive:** Client sends `PASV` command. Server responds with a port number. Client connects to the server's data port.
+5.  **Data Transfer:** Once the data connection is established, the file content is transferred over this connection.
+6.  **Data Connection Close:** After the file transfer is complete, the data connection is typically closed. The control connection remains open for further commands.
+7.  **Session End:** The client sends a `QUIT` command to close the control connection and end the FTP session.
+
+**Example:** Using an FTP client to upload a website's files to a web hosting server or downloading software from a public FTP repository.
+
+### (iii) Telnet (Telecommunication Network)
+
+**Purpose:** Telnet is an application layer protocol used to provide a bidirectional interactive text-oriented communication facility using a virtual terminal connection. It primarily enables a user at one site to establish a TCP connection to a login server at another site and then pass keystrokes from the client to the server and display output from the server to the client. Essentially, it provides remote command-line access.
+
+**Key Characteristics:**
+
+*   **Client-Server Model:** A Telnet client connects to a Telnet server.
+*   **Uses TCP:** Telnet relies on TCP for reliable, ordered data transfer, typically over port 23.
+*   **Plain Text Communication:** All data (including usernames, passwords, and commands) is transmitted in clear, unencrypted plain text. This is its most significant security vulnerability.
+*   **Virtual Terminal Emulation:** The Telnet client emulates a terminal (e.g., VT100), allowing the remote server's command-line interface to be displayed and interacted with locally.
+*   **Network Virtual Terminal (NVT):** Telnet defines an NVT, a standard representation of a simple terminal, to ensure interoperability between different terminal types and operating systems.
+
+**Operation:**
+
+1.  **Client Initiates:** The Telnet client initiates a TCP connection to the Telnet server on port 23.
+2.  **Login:** Once the connection is established, the client typically presents a login prompt (e.g., "login:"). The user types credentials.
+3.  **Command Execution:** Each keystroke typed by the user on the client is sent to the server. The server processes these inputs as commands or data.
+4.  **Output Display:** The output generated by the server's commands or applications is sent back to the client and displayed on the client's terminal.
+5.  **Interactive Session:** This interactive exchange continues until the user logs out or the connection is terminated.
+
+**Example:** Historically, network administrators would use Telnet to remotely log into routers, switches, or Unix/Linux servers to configure them or run commands.
+
+**Security Concerns and Obsolescence:**
+
+Due to its plain text nature, Telnet is highly insecure. Anyone with network access can easily "sniff" (intercept and read) all traffic, including sensitive information like usernames and passwords. For this reason, Telnet has been largely replaced by more secure protocols like **SSH (Secure Shell)**, which provides encrypted communication and stronger authentication mechanisms. While its principles are fundamental, its practical use in modern secure environments is strongly discouraged.
