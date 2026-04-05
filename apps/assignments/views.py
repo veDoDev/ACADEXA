@@ -14,8 +14,7 @@ from .utils import (
     quality_score,
     generate_solution_with_ai,
     generate_feedback_with_ai,
-)
-
+)   
 
 def teacher_required(view_func):
     def wrapper(request, *args, **kwargs):
