@@ -1,0 +1,80 @@
+{% extends 'base/base.html' %}
+{% block title %}My Classes{% endblock %}
+{% block page_title %}Classes Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My Classes</h1>
+    <p>Student Analytics grouped by Department</p>
+  </div>
+</div>
+
+{% if not classes %}
+<div class="card" style="text-align:center; padding:40px;">
+  <h3 style="color:var(--text-muted);">No Classes Data Yet</h3>
+  <p>Students will appear here once they start submitting to your assignments.</p>
+</div>
+{% else %}
+
+<div style="display:flex; flex-direction:column; gap:24px;">
+  {% for class in classes %}
+  <div class="card">
+    <div class="card-header" style="background:var(--navy); border-bottom:1px solid var(--border);">
+      <h3>🏛️ {{ class.department }} Class</h3>
+      <span class="badge" style="background:var(--bg-main); color:var(--text-main);">{{ class.student_count }} Students</span>
+    </div>
+    
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student Name</th>
+            <th style="text-align:center;">Total Assignments</th>
+            <th style="text-align:center;">Flagged</th>
+            <th style="text-align:center;">Avg. Plagiarism</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in class.students %}
+          <tr>
+            <td style="font-weight:600; font-size:0.9rem;">
+              {{ record.student.get_full_name|default:record.student.username }}
+            </td>
+            <td style="text-align:center; font-weight:600;">{{ record.total_assignments }}</td>
+            <td style="text-align:center;">
+              {% if record.flagged > 0 %}
+                <span style="color:var(--danger); font-weight:700;">{{ record.flagged }} 🚨</span>
+              {% else %}
+                <span style="color:var(--text-muted);">0</span>
+              {% endif %}
+            </td>
+            <td style="text-align:center;">
+              <span class="{% if record.avg_plagiarism >= 70 %}text-danger{% elif record.avg_plagiarism >= 40 %}text-warning{% else %}text-success{% endif %}" style="font-weight:600;">
+                {{ record.avg_plagiarism }}%
+              </span>
+            </td>
+            <td>
+              {% if record.flagged > 0 %}
+                <span class="badge" style="background:rgba(220,53,69,0.15); color:var(--danger);">Needs Attention</span>
+              {% else %}
+                <span class="badge" style="background:rgba(39,174,96,0.15); color:var(--success);">In Good Standing</span>
+              {% endif %}
+            </td>
+            <td>
+              <!-- You could add a button here to message the student directly -->
+              <a href="{% url 'send_message' %}?to={{ record.student.username }}" class="btn btn-outline btn-sm">Message</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

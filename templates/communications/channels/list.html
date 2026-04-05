@@ -1,0 +1,43 @@
+{% extends 'base/base.html' %}
+{% block title %}My Channels{% endblock %}
+{% block page_title %}Channels Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Teams & Channels</h1>
+    <p>Engage in grouped academic discussions inside your active channels.</p>
+  </div>
+  {% if user.is_teacher %}
+  <a href="{% url 'channel_create' %}" class="btn btn-gold">＋ Create Channel</a>
+  {% endif %}
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-top:20px;">
+  {% for channel in channels %}
+  <div class="card" style="transition: transform 0.2s; border-top: 4px solid var(--gold);">
+    <div class="card-body">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0; font-size:1.4rem;">{{ channel.name }}</h3>
+        <span class="badge" style="background:var(--navy); color:var(--text-main);">{{ channel.members.count }} Members</span>
+      </div>
+      <p style="font-size:0.9rem; color:var(--text-muted); min-height: 45px;">
+        {{ channel.description|default:"No description provided."|truncatechars:80 }}
+      </p>
+      
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:16px;">
+        👨‍🏫 Managed by {{ channel.owner.get_full_name }}
+      </div>
+
+      <a href="{% url 'channel_detail' channel.pk %}" class="btn btn-outline" style="width: 100%; text-align:center;">Join Discussion →</a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="card" style="grid-column: 1 / -1; text-align:center; padding:50px;">
+    <div style="font-size: 3rem; margin-bottom:16px;">💬</div>
+    <h3>No Channels Yet</h3>
+    <p style="color:var(--text-muted);">You aren't a member of any channels currently.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,294 @@
+This solution addresses the assignment by providing a clear, correct, and well-structured approach to normalizing a sample table to Third Normal Form (3NF). It includes step-by-step reasoning, relevant examples, and academic language, formatted with distinct sections.
+
+---
+
+## Table of Contents
+
+1.  Introduction to Database Normalization
+    *   What is Normalization?
+    *   Goals of Normalization
+    *   Types of Anomalies
+    *   Normal Forms (1NF, 2NF, 3NF)
+2.  Assignment: Sample Table with Anomalies
+3.  Normalization Process
+    *   Step 1: Analyze the Unnormalized Table
+    *   Step 2: Normalize to First Normal Form (1NF)
+    *   Step 3: Normalize to Second Normal Form (2NF)
+    *   Step 4: Normalize to Third Normal Form (3NF)
+4.  Summary of Normalized Schema
+5.  Conclusion
+
+---
+
+## 1. Introduction to Database Normalization
+
+Database normalization is a systematic process of restructuring a relational database to reduce data redundancy and improve data integrity. Developed by Edgar F. Codd, it involves decomposing larger tables into smaller, less redundant tables and defining relationships between them.
+
+### What is Normalization?
+
+Normalization is a technique used in relational database design to organize tables in a way that minimizes data redundancy and eliminates undesirable characteristics like insertion, update, and deletion anomalies. It involves analyzing functional dependencies between attributes and breaking down tables based on predefined "normal forms."
+
+### Goals of Normalization
+
+The primary goals of normalization include:
+*   **Minimizing Redundancy:** Storing information only once to save space and avoid inconsistencies.
+*   **Improving Data Integrity:** Ensuring that data is accurate and consistent across the database.
+*   **Eliminating Anomalies:** Preventing issues during data modification operations.
+*   **Enhancing Query Efficiency:** Smaller, focused tables can sometimes lead to faster query performance, though excessive normalization (over 3NF) can sometimes lead to more complex joins and slower queries.
+*   **Simplifying Database Design:** Making the schema more logical and easier to manage.
+
+### Types of Anomalies
+
+Anomalies are undesirable side effects that occur when data is not properly structured in a database.
+*   **Insertion Anomaly:** Inability to add new data without also adding data about something else. For example, unable to add a new course without a student enrolling in it.
+*   **Deletion Anomaly:** Loss of data about one entity when a record about another entity is deleted. For instance, deleting the last enrollment record for a student might unintentionally delete all information about that student.
+*   **Update Anomaly:** Requirement to update multiple records to change a single piece of information, leading to inconsistencies if not all instances are updated. For example, changing an instructor's office address requires updating every course record they teach.
+
+### Normal Forms (1NF, 2NF, 3NF)
+
+Normalization is typically achieved through a series of steps, each corresponding to a normal form. The most commonly used normal forms are:
+
+*   **First Normal Form (1NF):** A relation is in 1NF if and only if all attribute domains contain only atomic (indivisible) values, and there are no repeating groups of columns. Each column must have a unique name, and the order of data storage does not matter.
+*   **Second Normal Form (2NF):** A relation is in 2NF if and only if it is in 1NF and all non-key attributes are fully functionally dependent on the primary key. This means no non-key attribute can be dependent on only a *part* of a composite primary key.
+*   **Third Normal Form (3NF):** A relation is in 3NF if and only if it is in 2NF and there are no transitive dependencies. A transitive dependency occurs when a non-key attribute is functionally dependent on another non-key attribute. In other words, every non-key attribute must directly depend on the primary key, and nothing but the primary key.
+
+## 2. Assignment: Sample Table with Anomalies
+
+To demonstrate the normalization process, let's consider a `StudentEnrollment` table that captures student details, course details, instructor information, and enrollment specifics. This table is deliberately designed with anomalies to illustrate the benefits of normalization.
+
+**Sample Table: `StudentEnrollment`**
+
+| StudentID | StudentName | CourseID | CourseName | Instructor  | InstructorOffice | EnrollmentDate | Grade | DepartmentHead |
+| :-------- | :---------- | :------- | :--------- | :---------- | :--------------- | :------------- | :---- | :------------- |
+| S001      | Alice Smith | CS101    | Intro CS   | Dr. Lee     | LIB 201          | 2023-09-01     | A     | Prof. Davis    |
+| S001      | Alice Smith | MA101    | Calc I     | Dr. Kim     | SCI 105          | 2023-09-01     | B+    | Prof. Chen     |
+| S002      | Bob Johnson | CS101    | Intro CS   | Dr. Lee     | LIB 201          | 2023-09-05     | B     | Prof. Davis    |
+| S003      | Carol White | PHI200   | Ethics     | Dr. Jones   | HUM 302          | 2023-09-10     | A-    | Prof. Miller   |
+| S003      | Carol White | MA101    | Calc I     | Dr. Kim     | SCI 105          | 2023-09-10     | A     | Prof. Chen     |
+
+**Analysis of Anomalies and Dependencies in `StudentEnrollment`:**
+
+1.  **Primary Key (Candidate):** Based on the data, a student can enroll in multiple courses, and a course can have multiple students. Therefore, a composite key `{StudentID, CourseID}` is required to uniquely identify each row (each specific enrollment).
+
+2.  **Functional Dependencies (FDs):**
+    *   `StudentID -> StudentName` (A student's ID uniquely determines their name)
+    *   `CourseID -> CourseName, Instructor, DepartmentHead` (A course ID uniquely determines its name, primary instructor, and the department head responsible for that course)
+    *   `Instructor -> InstructorOffice` (An instructor's name uniquely determines their office location)
+    *   `{StudentID, CourseID} -> EnrollmentDate, Grade` (The combination of a student and a course uniquely determines their enrollment date and grade)
+
+3.  **Anomalies Present:**
+    *   **Redundancy:**
+        *   `StudentName` (e.g., "Alice Smith") is repeated for each course `S001` enrolls in.
+        *   `CourseName`, `Instructor`, `InstructorOffice`, `DepartmentHead` (e.g., for "CS101") are repeated for each student enrolled in that course.
+    *   **Update Anomaly:** If Dr. Lee's office (LIB 201) changes, multiple rows (`S001, CS101` and `S002, CS101`) would need to be updated. Failing to update all instances leads to data inconsistency.
+    *   **Insertion Anomaly:** We cannot add a new course (e.g., "History 101") with its instructor and department head unless a student is immediately enrolled in it. Similarly, we cannot add a new student without enrolling them in at least one course.
+    *   **Deletion Anomaly:** If student S002 drops CS101 (i.e., that row is deleted), we lose information about Bob Johnson's enrollment, but also the association of CS101 with Dr. Lee if S002 was the only record currently showing that association (in a larger dataset).
+
+## 3. Normalization Process
+
+We will now normalize the `StudentEnrollment` table step-by-step to 3NF.
+
+### Step 1: Analyze the Unnormalized Table
+
+*   **Table Name:** `StudentEnrollment`
+*   **Attributes:** `StudentID`, `StudentName`, `CourseID`, `CourseName`, `Instructor`, `InstructorOffice`, `EnrollmentDate`, `Grade`, `DepartmentHead`
+*   **Candidate Primary Key:** `{StudentID, CourseID}` (composite key)
+*   **Functional Dependencies:**
+    *   `StudentID -> StudentName`
+    *   `CourseID -> CourseName, Instructor, DepartmentHead`
+    *   `Instructor -> InstructorOffice`
+    *   `{StudentID, CourseID} -> EnrollmentDate, Grade`
+*   **Anomalies:** Redundancy, Update, Insertion, Deletion anomalies are clearly present due to violations of 2NF and 3NF.
+
+### Step 2: Normalize to First Normal Form (1NF)
+
+**Definition:** A relation is in 1NF if and only if all attribute domains contain only atomic values, and there are no repeating groups of columns.
+
+**Justification:**
+Upon inspection, all attributes in the `StudentEnrollment` table (`StudentID`, `StudentName`, `CourseID`, `CourseName`, `Instructor`, `InstructorOffice`, `EnrollmentDate`, `Grade`, `DepartmentHead`) already hold atomic values. There are no multi-valued attributes (e.g., a list of phone numbers in one cell) or repeating groups (e.g., `Course1ID`, `Course1Name`, `Course2ID`, `Course2Name`). Each column contains a single, indivisible piece of information.
+
+**Resulting Table (1NF):**
+The `StudentEnrollment` table, as initially presented, already satisfies the conditions for 1NF. No structural changes are required at this stage.
+
+**`StudentEnrollment` (1NF):**
+
+| StudentID | StudentName | CourseID | CourseName | Instructor  | InstructorOffice | EnrollmentDate | Grade | DepartmentHead |
+| :-------- | :---------- | :------- | :--------- | :---------- | :--------------- | :------------- | :---- | :------------- |
+| S001      | Alice Smith | CS101    | Intro CS   | Dr. Lee     | LIB 201          | 2023-09-01     | A     | Prof. Davis    |
+| S001      | Alice Smith | MA101    | Calc I     | Dr. Kim     | SCI 105          | 2023-09-01     | B+    | Prof. Chen     |
+| S002      | Bob Johnson | CS101    | Intro CS   | Dr. Lee     | LIB 201          | 2023-09-05     | B     | Prof. Davis    |
+| S003      | Carol White | PHI200   | Ethics     | Dr. Jones   | HUM 302          | 2023-09-10     | A-    | Prof. Miller   |
+| S003      | Carol White | MA101    | Calc I     | Dr. Kim     | SCI 105          | 2023-09-10     | A     | Prof. Chen     |
+
+**Primary Key:** `{StudentID, CourseID}`
+
+### Step 3: Normalize to Second Normal Form (2NF)
+
+**Definition:** A relation is in 2NF if and only if it is in 1NF and all non-key attributes are fully functionally dependent on the primary key. This addresses partial dependencies, where a non-key attribute depends only on a part of a composite primary key.
+
+**Justification:**
+Our `StudentEnrollment` table has a composite primary key: `{StudentID, CourseID}`. We need to identify any non-key attributes that depend on only `StudentID` or only `CourseID`, but not both.
+
+*   **Partial Dependency 1:** `StudentID -> StudentName`
+    *   `StudentName` depends only on `StudentID`, which is a part of the composite primary key.
+*   **Partial Dependency 2:** `CourseID -> CourseName, Instructor, InstructorOffice, DepartmentHead`
+    *   `CourseName`, `Instructor`, `InstructorOffice`, `DepartmentHead` depend only on `CourseID`, which is a part of the composite primary key.
+
+To resolve these partial dependencies, we decompose the `StudentEnrollment` table into three new tables:
+
+1.  **`Students`** table: To store student-specific information.
+2.  **`Courses`** table: To store course-specific and instructor-specific information.
+3.  **`Enrollments`** table: To store the core enrollment details, dependent on both `StudentID` and `CourseID`.
+
+**Decomposition:**
+
+**1. `Students` Table**
+    *   **Attributes:** `StudentID`, `StudentName`
+    *   **Primary Key:** `StudentID`
+    *   **Justification:** This table removes the partial dependency `StudentID -> StudentName`. `StudentName` is now fully dependent on `StudentID`. Redundancy of student names is eliminated.
+
+    | StudentID | StudentName |
+    | :-------- | :---------- |
+    | S001      | Alice Smith |
+    | S002      | Bob Johnson |
+    | S003      | Carol White |
+
+**2. `Courses` Table**
+    *   **Attributes:** `CourseID`, `CourseName`, `Instructor`, `InstructorOffice`, `DepartmentHead`
+    *   **Primary Key:** `CourseID`
+    *   **Justification:** This table removes the partial dependency `CourseID -> CourseName, Instructor, InstructorOffice, DepartmentHead`. These attributes are now fully dependent on `CourseID`. Redundancy of course details, instructor details, and department heads is eliminated.
+
+    | CourseID | CourseName | Instructor  | InstructorOffice | DepartmentHead |
+    | :------- | :--------- | :---------- | :--------------- | :------------- |
+    | CS101    | Intro CS   | Dr. Lee     | LIB 201          | Prof. Davis    |
+    | MA101    | Calc I     | Dr. Kim     | SCI 105          | Prof. Chen     |
+    | PHI200   | Ethics     | Dr. Jones   | HUM 302          | Prof. Miller   |
+
+**3. `Enrollments` Table**
+    *   **Attributes:** `StudentID` (FK), `CourseID` (FK), `EnrollmentDate`, `Grade`
+    *   **Primary Key:** `{StudentID, CourseID}` (composite)
+    *   **Foreign Keys:** `StudentID` references `Students(StudentID)`, `CourseID` references `Courses(CourseID)`
+    *   **Justification:** This table retains the attributes that are fully dependent on the composite primary key `{StudentID, CourseID}`. It represents the many-to-many relationship between students and courses.
+
+    | StudentID | CourseID | EnrollmentDate | Grade |
+    | :-------- | :------- | :------------- | :---- |
+    | S001      | CS101    | 2023-09-01     | A     |
+    | S001      | MA101    | 2023-09-01     | B+    |
+    | S002      | CS101    | 2023-09-05     | B     |
+    | S003      | PHI200   | 2023-09-10     | A-    |
+    | S003      | MA101    | 2023-09-10     | A     |
+
+All three tables (`Students`, `Courses`, `Enrollments`) are now in 2NF.
+
+### Step 4: Normalize to Third Normal Form (3NF)
+
+**Definition:** A relation is in 3NF if and only if it is in 2NF and there are no transitive dependencies. A transitive dependency exists when a non-key attribute is functionally dependent on another non-key attribute.
+
+**Justification:**
+We now check the 2NF tables for transitive dependencies.
+
+1.  **`Students` Table:** `StudentID (PK) -> StudentName`
+    *   There are no non-key attributes that depend on other non-key attributes. This table is already in 3NF.
+
+2.  **`Enrollments` Table:** `{StudentID, CourseID} (PK) -> EnrollmentDate, Grade`
+    *   `EnrollmentDate` and `Grade` are non-key attributes. Neither depends on the other. This table is already in 3NF.
+
+3.  **`Courses` Table:** `CourseID (PK) -> CourseName, Instructor, InstructorOffice, DepartmentHead`
+    *   Here, we identify a transitive dependency: `Instructor -> InstructorOffice`.
+        *   `CourseID` is the primary key.
+        *   `Instructor` is a non-key attribute.
+        *   `InstructorOffice` is another non-key attribute.
+        *   `InstructorOffice` is functionally dependent on `Instructor`, which is itself a non-key attribute. This violates 3NF.
+
+To resolve this transitive dependency, we decompose the `Courses` table into two new tables:
+
+1.  **`Courses_Core`** table: To store the core course details.
+2.  **`Instructors`** table: To store instructor-specific information.
+
+**Decomposition:**
+
+**1. `Courses_Core` Table**
+    *   **Attributes:** `CourseID`, `CourseName`, `Instructor` (FK), `DepartmentHead`
+    *   **Primary Key:** `CourseID`
+    *   **Foreign Key:** `Instructor` references `Instructors(Instructor)`
+    *   **Justification:** This table now directly links `CourseID` to `CourseName`, `Instructor`, and `DepartmentHead`. The transitive dependency `Instructor -> InstructorOffice` is removed from this table.
+
+    | CourseID | CourseName | Instructor  | DepartmentHead |
+    | :------- | :--------- | :---------- | :------------- |
+    | CS101    | Intro CS   | Dr. Lee     | Prof. Davis    |
+    | MA101    | Calc I     | Dr. Kim     | Prof. Chen     |
+    | PHI200   | Ethics     | Dr. Jones   | Prof. Miller   |
+
+**2. `Instructors` Table**
+    *   **Attributes:** `Instructor`, `InstructorOffice`
+    *   **Primary Key:** `Instructor`
+    *   **Justification:** This new table holds the information where `InstructorOffice` is directly dependent on `Instructor`. This resolves the transitive dependency identified in the `Courses` table. Updates to an instructor's office now only require changing one record in this table.
+
+    | Instructor  | InstructorOffice |
+    | :---------- | :--------------- |
+    | Dr. Lee     | LIB 201          |
+    | Dr. Kim     | SCI 105          |
+    | Dr. Jones   | HUM 302          |
+
+All resulting tables (`Students`, `Enrollments`, `Courses_Core`, `Instructors`) are now in Third Normal Form (3NF).
+
+## 4. Summary of Normalized Schema
+
+The normalization process transformed the single, anomalous `StudentEnrollment` table into four well-structured tables in 3NF:
+
+**1. `Students` Table (3NF)**
+*   **Purpose:** Stores unique information about each student.
+*   **Attributes:** `StudentID` (Primary Key), `StudentName`
+*   **Functional Dependencies:** `StudentID -> StudentName`
+
+**2. `Instructors` Table (3NF)**
+*   **Purpose:** Stores unique information about each instructor.
+*   **Attributes:** `Instructor` (Primary Key), `InstructorOffice`
+*   **Functional Dependencies:** `Instructor -> InstructorOffice`
+
+**3. `Courses_Core` Table (3NF)**
+*   **Purpose:** Stores core information about each course, linking to instructors.
+*   **Attributes:** `CourseID` (Primary Key), `CourseName`, `Instructor` (Foreign Key referencing `Instructors`), `DepartmentHead`
+*   **Functional Dependencies:** `CourseID -> CourseName, Instructor, DepartmentHead`
+
+**4. `Enrollments` Table (3NF)**
+*   **Purpose:** Records each specific enrollment of a student in a course.
+*   **Attributes:** `StudentID` (Foreign Key referencing `Students`), `CourseID` (Foreign Key referencing `Courses_Core`), `EnrollmentDate`, `Grade`
+*   **Primary Key:** `{StudentID, CourseID}` (Composite Primary Key)
+*   **Functional Dependencies:** `{StudentID, CourseID} -> EnrollmentDate, Grade`
+
+**Entity-Relationship Diagram (Conceptual):**
+
+```
++------------+        +-------------+        +------------+
+|  Students  | 1----<*| Enrollments |*>----1| Courses_Core |
++------------+        +-------------+        +------------+
+| PK StudentID|       | PK StudentID|        | PK CourseID  |
+| StudentName|       | PK CourseID |        | CourseName |
++------------+       | EnrollmentDt|        | FK Instructor |
+                     | Grade       |        | DepartmentHd |
+                     +-------------+        +------------+
+                                                 |
+                                                 *
+                                                 |
+                                          +------------+
+                                          | Instructors |
+                                          +------------+
+                                          | PK Instructor |
+                                          | InstructorOffice |
+                                          +------------+
+```
+
+## 5. Conclusion
+
+By normalizing the initial `StudentEnrollment` table to Third Normal Form, we have achieved a significantly improved database design. This systematic decomposition has yielded several key benefits:
+
+*   **Elimination of Redundancy:** Data such as `StudentName`, `CourseName`, and `InstructorOffice` are now stored only once in their respective tables (`Students`, `Courses_Core`, `Instructors`), drastically reducing data duplication.
+*   **Mitigation of Anomalies:**
+    *   **Update Anomalies:** Changing an instructor's office or a student's name now only requires updating a single record in the `Instructors` or `Students` table, respectively, ensuring data consistency.
+    *   **Insertion Anomalies:** New courses can be added to `Courses_Core` and new instructors to `Instructors` without requiring student enrollments. Similarly, new students can be added without immediate course enrollment.
+    *   **Deletion Anomalies:** Deleting an enrollment record from the `Enrollments` table no longer risks losing crucial information about students, courses, or instructors, as that data resides in separate, dedicated tables.
+*   **Improved Data Integrity:** The clear definition of primary and foreign keys enforces referential integrity, preventing inconsistent data entries and ensuring valid relationships between entities.
+*   **Enhanced Database Maintainability and Scalability:** The modular design with smaller, focused tables makes the database schema easier to understand, manage, and extend as new requirements emerge.
+
+In summary, the normalization process to 3NF has transformed an inefficient and anomaly-prone table into a robust, consistent, and well-structured relational schema, adhering to best practices in database design.

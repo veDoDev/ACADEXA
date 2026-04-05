@@ -1,0 +1,75 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ channel.name }} — Channel{% endblock %}
+{% block page_title %}Channel{% endblock %}
+
+{% block content %}
+<div class="chat-shell">
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <div class="chat-title">Channels</div>
+      <div class="chat-subtitle">You can access</div>
+    </div>
+
+    <nav class="chat-list">
+      {% for c in channels %}
+        <a class="chat-list-item {% if c.id == channel.id %}is-active{% endif %}" href="{% url 'channel_detail' c.id %}">
+          <div class="chat-list-title"># {{ c.name }}</div>
+          <div class="chat-list-subtitle">{{ c.members.count }} member{{ c.members.count|pluralize }}</div>
+        </a>
+      {% empty %}
+        <div class="chat-empty">No channels yet.</div>
+      {% endfor %}
+    </nav>
+  </aside>
+
+  <main class="chat-main">
+    <header class="chat-header">
+      <div>
+        <div class="chat-title"># {{ channel.name }}</div>
+        <div class="chat-subtitle">{{ channel.description|default:"Channel chat" }}</div>
+      </div>
+      <div class="chat-header-meta">
+        <span class="meta-pill">Owner: {{ channel.owner.get_full_name|default:channel.owner.username }}</span>
+        <span class="meta-pill">Members: {{ channel.members.count }}</span>
+      </div>
+    </header>
+
+    <section class="chat-thread">
+      {% for msg in messages_list %}
+        <div class="chat-row {% if msg.sender_id == request.user.id %}is-me{% endif %}">
+          <div class="bubble">
+            <div class="bubble-meta">
+              <span class="bubble-author">{{ msg.sender.get_full_name|default:msg.sender.username }}</span>
+              <span class="bubble-time">{{ msg.sent_at|date:"d M Y, H:i" }}</span>
+            </div>
+            <div class="bubble-body">{{ msg.body|linebreaksbr }}</div>
+
+            {% if msg.is_flagged or msg.sentiment_label %}
+              <div class="bubble-badges">
+                {% if msg.is_flagged %}
+                  <span class="pill pill-danger">Flagged{% if msg.flag_reason %}: {{ msg.flag_reason }}{% endif %}</span>
+                {% endif %}
+                {% if msg.sentiment_label %}
+                  <span class="pill pill-info">Sentiment: {{ msg.sentiment_label }}{% if msg.sentiment_score != None %} ({{ msg.sentiment_score|floatformat:2 }}){% endif %}</span>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="chat-empty">No messages yet.</div>
+      {% endfor %}
+    </section>
+
+    <footer class="chat-compose">
+      <form method="POST" class="chat-compose-form">
+        {% csrf_token %}
+        <div class="chat-compose-input">
+          {{ form.body }}
+        </div>
+        <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+    </footer>
+  </main>
+</div>
+{% endblock %}

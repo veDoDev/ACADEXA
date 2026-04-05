@@ -14,13 +14,14 @@
 <div class="card">
   {% if messages_list %}
     {% for msg in messages_list %}
-    <a href="{% url 'message_detail' msg.pk %}" class="message-item {% if not msg.is_read %}unread{% endif %}">
-      {% if not msg.is_read %}<div class="unread-dot"></div>{% else %}<div style="width:8px;"></div>{% endif %}
-      <div style="flex:1; min-width:0;">
-        <div class="msg-from">{{ msg.sender.get_full_name }}</div>
+    <a href="{% url 'message_detail' msg.pk %}" class="message-row {% if not msg.is_read %}unread{% endif %}">
+      {% if not msg.is_read %}<div class="unread-dot"></div>{% else %}<div style="width:6px;"></div>{% endif %}
+      <div class="msg-avatar">{{ msg.sender.first_name|first|upper }}{{ msg.sender.last_name|first|upper }}</div>
+      <div class="msg-content">
+        <div class="msg-from">{{ msg.sender.get_full_name|default:msg.sender.username }}</div>
         <div class="msg-subject">
           {% if msg.subject %}{{ msg.subject }}{% else %}<em>No subject</em>{% endif %}
-          {% if msg.is_flagged %}<span class="badge badge-flagged" style="margin-left:8px;">⚠ Flagged</span>{% endif %}
+          {% if msg.is_flagged %}<span class="badge" style="margin-left:8px;">Flagged</span>{% endif %}
         </div>
       </div>
       <div class="msg-time">{{ msg.sent_at|date:"d M, H:i" }}</div>

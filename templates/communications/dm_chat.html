@@ -1,0 +1,69 @@
+{% extends 'base/base.html' %}
+{% block title %}Chat — {{ other.get_full_name|default:other.username }}{% endblock %}
+{% block page_title %}Chat{% endblock %}
+
+{% block content %}
+<div class="chat-shell">
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <div style="font-weight:800; font-family:'JetBrains Mono', monospace; font-size:0.86rem;">Chats</div>
+      <div style="color:var(--text-3); font-size:0.74rem; margin-top:4px;">$ recent threads</div>
+    </div>
+    <div class="chat-sidebar-list">
+      <a class="chat-link" href="{% url 'dm_home' %}">← Back to search</a>
+      {% for t in threads %}
+        <a class="chat-link {% if t.other.pk == other.pk %}active{% endif %}" href="{% url 'dm_chat' t.other.pk %}">
+          <div class="msg-avatar">{{ t.other.first_name|first|upper }}{{ t.other.last_name|first|upper }}</div>
+          <div style="min-width:0;">
+            <div class="chat-link-title">{{ t.other.get_full_name|default:t.other.username }}</div>
+            <div class="chat-link-sub">{{ t.last.body|truncatechars:40 }}</div>
+          </div>
+        </a>
+      {% empty %}
+        <div style="color:var(--text-3); padding:10px;">No threads yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="chat-main">
+    <div class="chat-main-header">
+      <div>
+        <div class="chat-title">$ chat @{{ other.username }}</div>
+        <div class="chat-hint">{{ other.get_full_name|default:other.username }} · {{ other.role }}</div>
+      </div>
+      <a href="{% url 'send_message_to' other.pk %}" class="btn btn-outline btn-sm">Open as mail →</a>
+    </div>
+
+    <div class="chat-messages" id="chat-scroll">
+      {% for m in messages_list %}
+        <div class="bubble {% if m.sender_id == user.id %}me{% endif %}">
+          <div>{{ m.body }}</div>
+          <div class="meta">
+            <span>{% if m.sender_id == user.id %}me{% else %}{{ m.sender.username }}{% endif %}</span>
+            <span>{{ m.sent_at|date:"d M, H:i" }}</span>
+          </div>
+          {% if m.is_flagged and m.flag_reason %}
+            <div style="margin-top:6px; color:var(--text-3); font-size:0.75rem;">flag: {{ m.flag_reason }}</div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div style="color:var(--text-3); text-align:center; padding:40px 0;">No messages yet. Say hi.</div>
+      {% endfor %}
+    </div>
+
+    <div class="chat-compose">
+      <form method="POST" style="display:contents;">
+        {% csrf_token %}
+        <textarea name="body" placeholder="> type a message..." required></textarea>
+        <button type="submit" class="btn btn-gold">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // keep scroll at bottom
+  const el = document.getElementById('chat-scroll');
+  if (el) el.scrollTop = el.scrollHeight;
+</script>
+{% endblock %}

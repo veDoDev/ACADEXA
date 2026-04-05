@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+from django.utils import timezone
 import os
 
 from .models import Assignment, Submission
@@ -41,6 +42,31 @@ def assignment_list(request):
     else:
         assignments = Assignment.objects.all()
     return render(request, 'assignments/list.html', {'assignments': assignments})
+
+
+@login_required
+def assignment_calendar(request):
+    """Simple calendar-like view of upcoming assignment deadlines."""
+    if request.user.is_teacher():
+        qs = Assignment.objects.filter(teacher=request.user)
+    else:
+        qs = Assignment.objects.all()
+
+    # Upcoming first; keep it simple for now
+    assignments = qs.order_by('deadline')
+
+    today = timezone.localdate()
+    grouped = {}
+    for a in assignments:
+        day = timezone.localtime(a.deadline).date()
+        grouped.setdefault(day, []).append(a)
+
+    ordered_groups = [(day, grouped[day]) for day in sorted(grouped.keys())]
+
+    return render(request, 'assignments/calendar.html', {
+        'today': today,
+        'ordered_groups': ordered_groups,
+    })
 
 
 @login_required
@@ -112,8 +138,9 @@ def submit_assignment(request, pk):
 
         # Run plagiarism check
         if student_text and reference_text:
-            plag_score, _ = plagiarism_score(student_text, reference_text)
+            plag_score, conf_score = plagiarism_score(student_text, reference_text)
             submission.plagiarism_score = plag_score
+            submission.confidence_score = conf_score
 
         # Quality score
         if student_text:
@@ -174,7 +201,91 @@ def all_submissions(request):
     """Teacher view of all their students' submissions"""
     if not request.user.is_teacher():
         return redirect('dashboard')
-    submissions = Submission.objects.filter(
+        
+    qs = Submission.objects.filter(
         assignment__teacher=request.user
-    ).select_related('student', 'assignment').order_by('-submitted_at')
+    ).select_related('student', 'assignment')
+    
+    status_filter = request.GET.get('status')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+        
+    submissions = qs.order_by('-submitted_at')
     return render(request, 'assignments/all_submissions.html', {'submissions': submissions})
+
+
+@login_required
+@teacher_required
+def assignment_edit(request, pk):
+    assignment = get_object_or_404(Assignment, pk=pk)
+    if assignment.teacher != request.user:
+        messages.error(request, "You can only edit your own assignments.")
+        return redirect('dashboard')
+    
+    form = AssignmentForm(request.POST or None, instance=assignment)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, f'Assignment "{assignment.title}" updated successfully!')
+        return redirect('assignment_detail', pk=assignment.pk)
+        
+    return render(request, 'assignments/edit.html', {'form': form, 'assignment': assignment})
+
+
+@login_required
+@teacher_required
+def assignment_delete(request, pk):
+    assignment = get_object_or_404(Assignment, pk=pk)
+    if assignment.teacher != request.user:
+        messages.error(request, "You can only delete your own assignments.")
+        return redirect('dashboard')
+        
+    if request.method == 'POST':
+        assignment.delete()
+        messages.success(request, 'Assignment deleted successfully.')
+        return redirect('dashboard')
+        
+    return render(request, 'assignments/confirm_delete.html', {'assignment': assignment})
+
+
+@login_required
+def recalculate_analysis(request, pk):
+    submission = get_object_or_404(Submission, pk=pk)
+    
+    # Access control
+    if request.user.is_student() and submission.student != request.user:
+        messages.error(request, "Access denied.")
+        return redirect('dashboard')
+    if request.user.is_teacher() and submission.assignment.teacher != request.user:
+        messages.error(request, "Access denied.")
+        return redirect('dashboard')
+        
+    student_text = submission.extracted_text or submission.text_content
+    
+    # Retry AI generation
+    reference_text = ''
+    try:
+        if not submission.assignment.description:
+            messages.warning(request, "Assignment has no description for AI to use.")
+        else:
+            reference_text = generate_solution_with_ai(submission.assignment.description)
+            submission.generated_solution = reference_text
+    except Exception as e:
+        messages.error(request, f"AI generation failed: {e}")
+        return redirect('submission_detail', pk=pk)
+
+    # Retry comparison
+    if student_text and reference_text:
+        plag_score, conf_score = plagiarism_score(student_text, reference_text)
+        submission.plagiarism_score = plag_score
+        submission.confidence_score = conf_score
+        
+        # update status if needed
+        if submission.plagiarism_score and submission.plagiarism_score >= 70:
+            submission.status = 'flagged'
+
+    if student_text:
+        submission.quality_score = quality_score(student_text)
+        
+    submission.save()
+    messages.success(request, 'Analysis recalculated successfully!')
+    return redirect('submission_detail', pk=pk)

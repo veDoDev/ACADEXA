@@ -1,0 +1,55 @@
+{% extends 'base/base.html' %}
+{% block title %}Direct Messages{% endblock %}
+{% block page_title %}Direct Messages{% endblock %}
+
+{% block content %}
+<div class="chat-shell">
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <div style="font-weight:800; font-family:'JetBrains Mono', monospace; font-size:0.86rem; margin-bottom:8px;">People</div>
+      <form method="GET" action="{% url 'dm_home' %}">
+        <input class="chat-search" type="text" name="q" value="{{ q }}" placeholder="> search people (name / username)" />
+      </form>
+    </div>
+    <div class="chat-sidebar-list">
+      {% for p in people %}
+        <a class="chat-link" href="{% url 'dm_chat' p.pk %}">
+          <div class="msg-avatar">{{ p.first_name|first|upper }}{{ p.last_name|first|upper }}</div>
+          <div style="min-width:0;">
+            <div class="chat-link-title">{{ p.get_full_name|default:p.username }}</div>
+            <div class="chat-link-sub">{{ p.username }} · {{ p.role }}</div>
+          </div>
+        </a>
+      {% empty %}
+        <div style="color:var(--text-3); padding:10px;">No results.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="chat-main">
+    <div class="chat-main-header">
+      <div>
+        <div class="chat-title">$ dm</div>
+        <div class="chat-hint">Pick a person to start chatting.</div>
+      </div>
+    </div>
+
+    <div class="chat-messages">
+      {% if threads %}
+        {% for t in threads %}
+          <a class="chat-link" style="border:1px solid var(--border); background:rgba(255,255,255,0.03);" href="{% url 'dm_chat' t.other.pk %}">
+            <div class="msg-avatar">{{ t.other.first_name|first|upper }}{{ t.other.last_name|first|upper }}</div>
+            <div style="min-width:0; flex:1;">
+              <div class="chat-link-title">{{ t.other.get_full_name|default:t.other.username }}</div>
+              <div class="chat-link-sub">{{ t.last.body|truncatechars:60 }}</div>
+            </div>
+            <div style="color:var(--text-4); font-size:0.7rem; font-family:'JetBrains Mono', monospace; white-space:nowrap;">{{ t.last.sent_at|date:"d M, H:i" }}</div>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div style="color:var(--text-3); text-align:center; padding:40px 0;">No chats yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

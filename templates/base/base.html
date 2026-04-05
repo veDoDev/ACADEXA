@@ -23,7 +23,11 @@
     </a>
 
     <div class="sidebar-user">
-      <div class="user-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+      {% if user.profile_pic %}
+        <img src="{{ user.profile_pic.url }}" alt="Profile Pic" class="user-avatar" style="object-fit:cover; border-radius:50%; width:36px; height:36px; padding:0; background:transparent;">
+      {% else %}
+        <div class="user-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+      {% endif %}
       <div>
         <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
         <span class="user-role {{ user.role }}">{{ user.role }}</span>
@@ -35,12 +39,24 @@
       <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
         <span class="nav-icon">⊞</span> Dashboard
       </a>
+      <a href="{% url 'profile_edit' %}" class="nav-link {% if request.resolver_match.url_name == 'profile_edit' %}active{% endif %}">
+        <span class="nav-icon">👤</span> My Profile
+      </a>
       <a href="{% url 'assignment_list' %}" class="nav-link">
         <span class="nav-icon">▤</span> Assignments
+      </a>
+      <a href="{% url 'assignment_calendar' %}" class="nav-link {% if request.resolver_match.url_name == 'assignment_calendar' %}active{% endif %}">
+        <span class="nav-icon">🗓</span> Calendar
       </a>
 
       {% if user.is_teacher %}
       <div class="nav-section-label">// tools</div>
+      <a href="{% url 'teacher_classes' %}" class="nav-link {% if request.resolver_match.url_name == 'teacher_classes' %}active{% endif %}">
+        <span class="nav-icon">🏛️</span> Classes
+      </a>
+      <a href="{% url 'analytics_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'analytics_dashboard' %}active{% endif %}">
+        <span class="nav-icon">📈</span> Analytics
+      </a>
       <a href="{% url 'assignment_create' %}" class="nav-link">
         <span class="nav-icon">+</span> New Assignment
       </a>
@@ -50,8 +66,11 @@
       {% endif %}
 
       <div class="nav-section-label">// comms</div>
+      <a href="{% url 'channel_list' %}" class="nav-link {% if 'channel' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="nav-icon">💬</span> Channels
+      </a>
       <a href="{% url 'inbox' %}" class="nav-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}">
-        <span class="nav-icon">⌘</span> Inbox
+        <span class="nav-icon">⌘</span> Direct Messages
       </a>
       <a href="{% url 'send_message' %}" class="nav-link">
         <span class="nav-icon">↗</span> Compose

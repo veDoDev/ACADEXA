@@ -14,26 +14,26 @@
 
 <!-- STATS -->
 <div class="stats-grid">
-  <div class="stat-card">
+  <a href="{% url 'assignment_list' %}" class="stat-card" style="text-decoration:none; color:inherit;">
     <span class="stat-icon">📋</span>
     <div class="stat-value">{{ total_assignments }}</div>
     <div class="stat-label">Active Assignments</div>
-  </div>
-  <div class="stat-card">
+  </a>
+  <a href="{% url 'all_submissions' %}" class="stat-card" style="text-decoration:none; color:inherit;">
     <span class="stat-icon">📥</span>
     <div class="stat-value">{{ total_submissions }}</div>
     <div class="stat-label">Total Submissions</div>
-  </div>
-  <div class="stat-card warning">
+  </a>
+  <a href="{% url 'all_submissions' %}?status=submitted" class="stat-card warning" style="text-decoration:none; color:inherit;">
     <span class="stat-icon">⏳</span>
     <div class="stat-value">{{ pending_review }}</div>
     <div class="stat-label">Pending Review</div>
-  </div>
-  <div class="stat-card danger">
+  </a>
+  <a href="{% url 'all_submissions' %}?status=flagged" class="stat-card danger" style="text-decoration:none; color:inherit;">
     <span class="stat-icon">🚨</span>
     <div class="stat-value">{{ flagged }}</div>
     <div class="stat-label">High Plagiarism</div>
-  </div>
+  </a>
   <div class="stat-card">
     <span class="stat-icon">📈</span>
     <div class="stat-value">{{ avg_plagiarism }}%</div>

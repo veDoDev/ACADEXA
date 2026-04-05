@@ -1,0 +1,25 @@
+{% extends 'base/base.html' %}
+{% block title %}Delete Assignment{% endblock %}
+{% block page_title %}Delete Assignment{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 0 auto; margin-top: 40px; text-align: center;">
+  <div class="card-header" style="background: rgba(220, 53, 69, 0.1);">
+    <h3 style="color: #dc3545;">⚠️ Confirm Deletion</h3>
+  </div>
+  <div class="card-body">
+    <p style="margin-bottom: 20px;">Are you sure you want to delete the assignment <strong>"{{ assignment.title }}"</strong>?</p>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 30px;">
+      This action cannot be undone and will remove all associated submissions.
+    </p>
+    
+    <form method="POST">
+      {% csrf_token %}
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <button type="submit" class="btn" style="background: #dc3545; color: white;">Yes, Delete</button>
+        <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

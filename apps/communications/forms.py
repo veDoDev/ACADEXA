@@ -27,3 +27,34 @@ class MessageForm(forms.ModelForm):
                 self.fields['receiver'].queryset = User.objects.filter(role='student')
         if initial_receiver:
             self.fields['receiver'].initial = initial_receiver
+
+
+class ChannelForm(forms.ModelForm):
+    members = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-input', 'style': 'height: 150px;'}),
+        required=False,
+        help_text="Hold Ctrl/Cmd to select multiple members."
+    )
+
+    class Meta:
+        model = getattr(__import__('apps.communications.models', fromlist=['Channel']), 'Channel')
+        fields = ['name', 'description', 'members']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Channel Name (e.g., DBMS 2nd Year)'}),
+            'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3, 'placeholder': 'What is this channel about?'}),
+        }
+
+
+class ChannelMessageForm(forms.ModelForm):
+    class Meta:
+        model = getattr(__import__('apps.communications.models', fromlist=['ChannelMessage']), 'ChannelMessage')
+        fields = ['body']
+        widgets = {
+            'body': forms.Textarea(attrs={
+                'class': 'form-input', 
+                'rows': 2, 
+                'placeholder': 'Type a new message...',
+                'style': 'resize: none; border-radius: 20px; padding: 12px 20px;'
+            }),
+        }

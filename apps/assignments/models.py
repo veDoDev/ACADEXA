@@ -45,6 +45,7 @@ class Submission(models.Model):
     extracted_text = models.TextField(blank=True)
 
     plagiarism_score = models.FloatField(null=True, blank=True)
+    confidence_score = models.FloatField(null=True, blank=True)
     quality_score = models.FloatField(null=True, blank=True)
     ai_feedback = models.TextField(blank=True)
     generated_solution = models.TextField(blank=True)

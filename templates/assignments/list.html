@@ -15,17 +15,15 @@
 <div class="assignment-grid">
   {% for a in assignments %}
   <a href="{% url 'assignment_detail' a.pk %}" class="assignment-card">
-    <div class="assignment-card-header">
+    <div class="assignment-card-top">
+      {% if a.subject %}<span class="subject-tag">{{ a.subject }}</span>{% endif %}
       <h3>{{ a.title }}</h3>
-      {% if a.subject %}<div style="font-size:0.72rem; color:var(--gold); margin-top:4px; text-transform:uppercase; letter-spacing:1px;">{{ a.subject }}</div>{% endif %}
+      <p>{{ a.description|truncatechars:110 }}</p>
     </div>
-    <div class="assignment-card-body">
-      <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.6;">{{ a.description|truncatechars:100 }}</p>
-      <div class="assignment-meta">
-        <span class="meta-item">📅 Due {{ a.deadline|date:"d M Y" }}</span>
-        <span class="meta-item">🏆 {{ a.max_marks }} marks</span>
-        {% if user.is_teacher %}<span class="meta-item" style="color:var(--gold);">{{ a.submission_count }} submissions</span>{% endif %}
-      </div>
+    <div class="assignment-card-footer">
+      <span class="meta-pill">📅 Due {{ a.deadline|date:"d M Y" }}</span>
+      <span class="meta-pill">🏆 {{ a.max_marks }} marks</span>
+      {% if user.is_teacher %}<span class="meta-pill" style="color:var(--green);">{{ a.submission_count }} submissions</span>{% endif %}
     </div>
   </a>
   {% endfor %}

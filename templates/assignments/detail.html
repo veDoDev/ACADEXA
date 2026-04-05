@@ -8,7 +8,13 @@
     <h1>{{ assignment.title }}</h1>
     {% if assignment.subject %}<p style="color:var(--gold); font-weight:600; text-transform:uppercase; letter-spacing:1px; font-size:0.8rem;">{{ assignment.subject }}</p>{% endif %}
   </div>
-  <a href="{% url 'assignment_list' %}" class="btn btn-outline">← Back</a>
+  <div style="display: flex; gap: 10px;">
+    {% if user.is_teacher and user == assignment.teacher %}
+      <a href="{% url 'assignment_edit' assignment.pk %}" class="btn btn-primary">Edit</a>
+      <a href="{% url 'assignment_delete' assignment.pk %}" class="btn btn-outline" style="color: #dc3545; border-color: rgba(220,53,69,0.5);">Delete</a>
+    {% endif %}
+    <a href="{% url 'assignment_list' %}" class="btn btn-outline">← Back</a>
+  </div>
 </div>
 
 <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:24px;">

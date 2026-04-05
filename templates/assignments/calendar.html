@@ -1,0 +1,52 @@
+{% extends 'base/base.html' %}
+{% block title %}Assignment Calendar{% endblock %}
+{% block page_title %}Assignments Calendar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Calendar</h1>
+    <p>Upcoming assignment deadlines (grouped by date).</p>
+  </div>
+  <a href="{% url 'assignment_list' %}" class="btn btn-outline">← Back</a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Deadlines</h3>
+  </div>
+  <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+
+    {% if ordered_groups %}
+      {% for day, a_list in ordered_groups %}
+        <div style="padding:12px; border:1px solid var(--border); border-radius:var(--radius-sm);">
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div style="font-weight:700;">
+              {{ day|date:"d M Y" }}
+              {% if day == today %}<span class="badge" style="margin-left:8px;">Today</span>{% endif %}
+            </div>
+            <div style="color:var(--text-muted); font-size:0.85rem;">{{ a_list|length }} assignment{{ a_list|length|pluralize }}</div>
+          </div>
+
+          <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+            {% for a in a_list %}
+              <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div>
+                  <a href="{% url 'assignment_detail' a.pk %}" style="font-weight:600;">{{ a.title }}</a>
+                  <div style="color:var(--text-muted); font-size:0.85rem;">{{ a.subject|default:"" }}</div>
+                </div>
+                <div style="color:var(--text-muted); font-size:0.85rem;">
+                  Due {{ a.deadline|date:"H:i" }} · Max {{ a.max_marks }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div style="color:var(--text-muted); text-align:center; padding:20px 0;">No assignments yet.</div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

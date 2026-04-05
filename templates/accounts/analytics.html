@@ -1,0 +1,95 @@
+{% extends 'base/base.html' %}
+{% block title %}Learning Analytics{% endblock %}
+{% block page_title %}Learning Analytics{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Learning Analytics</h1>
+    <p>Per-student history overview for your assignments.</p>
+  </div>
+  <a href="{% url 'export_submissions_csv' %}" class="btn btn-outline">⬇ Export CSV</a>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header">
+    <h3>Summary</h3>
+  </div>
+  <div class="card-body" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div>
+      <canvas id="plagChart" height="160"></canvas>
+    </div>
+    <div>
+      <canvas id="qualityChart" height="160"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Students</h3>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Department</th>
+          <th>Total Submissions</th>
+          <th>Avg Plagiarism</th>
+          <th>Avg Quality</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td style="font-weight:600;">{{ s.student.get_full_name|default:s.student.username }}</td>
+          <td style="color:var(--text-muted);">{{ s.student.department|default:"—" }}</td>
+          <td>{{ s.total_submissions }}</td>
+          <td>{{ s.avg_plagiarism }}%</td>
+          <td>{{ s.avg_quality }}/100</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--text-muted); padding:18px;">No submissions yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ chart_payload|json_script:"analytics-chart" }}
+
+<script>
+  const payload = JSON.parse(document.getElementById('analytics-chart').textContent);
+  const labels = payload.labels || [];
+  const plagData = payload.plag || [];
+  const qualityData = payload.quality || [];
+
+  const commonOpts = {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+      y: { ticks: { color: 'rgba(255,255,255,0.6)' }, grid: { color: 'rgba(255,255,255,0.08)' }, beginAtZero: true }
+    }
+  };
+
+  new Chart(document.getElementById('plagChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: plagData, backgroundColor: 'rgba(230, 126, 34, 0.6)' }] },
+    options: { ...commonOpts, plugins: { ...commonOpts.plugins, title: { display: true, text: 'Avg Plagiarism (%)', color: 'rgba(255,255,255,0.8)' } } }
+  });
+
+  new Chart(document.getElementById('qualityChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: qualityData, backgroundColor: 'rgba(39, 174, 96, 0.6)' }] },
+    options: { ...commonOpts, plugins: { ...commonOpts.plugins, title: { display: true, text: 'Avg Quality (/100)', color: 'rgba(255,255,255,0.8)' } } }
+  });
+</script>
+{% endblock %}

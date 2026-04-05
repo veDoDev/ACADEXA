@@ -1,0 +1,51 @@
+{% extends 'base/base.html' %}
+{% block title %}Edit Assignment{% endblock %}
+{% block page_title %}Edit Assignment{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Edit Assignment</h1>
+    <p>Update details for: {{ assignment.title }}</p>
+  </div>
+  <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-outline">← Back</a>
+</div>
+
+<div class="card form-section">
+  <div class="card-header"><h3>📋 Update Details</h3></div>
+  <div class="card-body">
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Assignment Title *</label>
+        {{ form.title }}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          {{ form.subject }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Marks</label>
+          {{ form.max_marks }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description / Question *</label>
+        {{ form.description }}
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+          💡 This text will be used by Gemini AI to generate a reference solution for plagiarism comparison.
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Submission Deadline *</label>
+        {{ form.deadline }}
+      </div>
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <button type="submit" class="btn btn-gold">Update Assignment</button>
+        <a href="{% url 'assignment_detail' assignment.pk %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

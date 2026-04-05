@@ -6,6 +6,7 @@ import hashlib
 import nltk
 import fitz  # PyMuPDF
 import numpy as np
+from typing import Optional
 from docx import Document
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -19,6 +20,85 @@ nltk.download('punkt_tab', quiet=True)
 
 # ─── TEXT EXTRACTION ─────────────────────────────────────────────────────────
 
+def _configure_tesseract_if_provided() -> None:
+    """Optionally set pytesseract command path via env var.
+
+    On Windows, users often need to install Tesseract and set the full path.
+    We support an env var `TESSERACT_CMD` to avoid hardcoding a machine-specific path.
+    """
+    try:
+        import pytesseract
+
+        tcmd = os.getenv('TESSERACT_CMD', '').strip()
+        if tcmd:
+            pytesseract.pytesseract.tesseract_cmd = tcmd
+    except Exception:
+        return
+
+
+def _ocr_pil_image(img, *, psm: int = 6) -> str:
+    """Run OCR on a PIL image with light preprocessing."""
+    try:
+        import pytesseract
+        from PIL import ImageOps, ImageEnhance
+
+        _configure_tesseract_if_provided()
+
+        # Basic preprocessing that generally helps typed/scanned text.
+        gray = ImageOps.grayscale(img)
+        gray = ImageEnhance.Contrast(gray).enhance(1.8)
+        gray = ImageEnhance.Sharpness(gray).enhance(1.3)
+
+        # Simple thresholding to reduce background noise.
+        bw = gray.point(lambda p: 255 if p > 160 else 0)
+
+        config = f"--oem 3 --psm {psm}"
+        text = pytesseract.image_to_string(bw, config=config)
+        return (text or '').strip()
+    except Exception as e:
+        print(f"OCR error: {e}")
+        return ''
+
+
+def _pdf_ocr_fallback(file_path: str, *, zoom: float = 2.5, max_pages: int = 8) -> str:
+    """OCR a scanned PDF by rendering pages to images and running Tesseract.
+
+    - `zoom` controls render resolution (higher -> better OCR, slower).
+    - `max_pages` avoids runaway CPU on large PDFs.
+    """
+    try:
+        from PIL import Image
+    except Exception:
+        return ''
+
+    try:
+        doc = fitz.open(file_path)
+    except Exception as e:
+        print(f"PDF open error for OCR: {e}")
+        return ''
+
+    texts = []
+    try:
+        page_count = min(len(doc), max_pages)
+        matrix = fitz.Matrix(zoom, zoom)
+        for i in range(page_count):
+            page = doc.load_page(i)
+            pix = page.get_pixmap(matrix=matrix, alpha=False)
+            mode = 'RGB'
+            img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
+            page_text = _ocr_pil_image(img, psm=6)
+            if page_text:
+                texts.append(page_text)
+    except Exception as e:
+        print(f"PDF OCR render error for {file_path}: {e}")
+    finally:
+        try:
+            doc.close()
+        except Exception:
+            pass
+
+    return "\n\n".join(texts).strip()
+
 def extract_text_from_file(file_path: str) -> str:
     ext = os.path.splitext(file_path)[1].lower()
     try:
@@ -26,10 +106,24 @@ def extract_text_from_file(file_path: str) -> str:
             doc = fitz.open(file_path)
             text = ''.join(page.get_text() for page in doc)
             doc.close()
-            return text.strip()
+            text = (text or '').strip()
+            # If it's a scanned PDF, text extraction is often empty; fall back to OCR.
+            if len(text) < 50:
+                ocr_text = _pdf_ocr_fallback(file_path)
+                return (ocr_text or text).strip()
+            return text
         elif ext == '.docx':
             doc = Document(file_path)
             return ' '.join(p.text for p in doc.paragraphs).strip()
+        elif ext in {'.png', '.jpg', '.jpeg'}:
+            # Optional OCR: requires Pillow + pytesseract (+ Tesseract installed on the OS)
+            try:
+                from PIL import Image
+                img = Image.open(file_path)
+                return _ocr_pil_image(img, psm=6)
+            except Exception as e:
+                print(f"OCR error for {file_path}: {e}")
+                return ''
         elif ext == '.txt':
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 return f.read().strip()
@@ -56,16 +150,49 @@ def plagiarism_score(text1: str, text2: str):
     t2 = preprocess_text(text2)
     if not t1 or not t2:
         return 0.0, 0.0
-    vectorizer = TfidfVectorizer().fit_transform([t1, t2])
-    sim = cosine_similarity(vectorizer[0:1], vectorizer[1:2])[0][0]
-    sim_pct = round(sim * 100, 2)
 
-    arr = vectorizer.toarray()
-    mean, std = np.mean(arr), np.std(arr)
-    if sim_pct == 100.0:
-        conf = 100.0
-    else:
-        conf = max(0, min(100, round((mean / (std + 1e-6)) * sim_pct, 2)))
+    # 1. Global Plagiarism Score
+    try:
+        vectorizer = TfidfVectorizer()
+        vec_global = vectorizer.fit_transform([t1, t2])
+        sim_global = cosine_similarity(vec_global[0:1], vec_global[1:2])[0][0]
+        sim_pct = round(sim_global * 100, 2)
+    except ValueError:
+        return 0.0, 0.0
+
+    # 2. Chunking for Confidence Score via Standard Deviation
+    from nltk.tokenize import sent_tokenize
+    try:
+        chunks = sent_tokenize(text1)
+    except Exception:
+        chunks = text1.split('.')
+
+    chunks = [preprocess_text(c) for c in chunks if len(c.strip()) > 10]
+    
+    if not chunks:
+        # Fallback if text is too short to chunk
+        return sim_pct, 50.0
+
+    try:
+        vec_ref = TfidfVectorizer().fit([t2])
+        ref_matrix = vec_ref.transform([t2])
+        chunk_matrices = vec_ref.transform(chunks)
+        chunk_sims = cosine_similarity(chunk_matrices, ref_matrix).flatten()
+        
+        # Calculate standard deviation of chunk similarities
+        std_dev = np.std(chunk_sims)
+        
+        # Calculate confidence using std dev (Lower std dev => higher confidence in consistency)
+        # We cap it at 100, subtracting std_dev impact. If std_dev is 0, confidence is 100%. 
+        # Since similarities are 0-1, std_dev is usually 0 to ~0.5
+        conf = max(0.0, min(100.0, round(100 * (1.0 - std_dev), 2)))
+        
+        if sim_pct == 100.0:
+            conf = 100.0
+            
+    except ValueError:
+        conf = 50.0
+
     return sim_pct, conf
 
 
