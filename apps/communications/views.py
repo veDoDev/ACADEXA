@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.http import JsonResponse
 from .models import Message
 from .forms import MessageForm
 from apps.accounts.models import User
@@ -131,6 +132,45 @@ def dm_chat(request, user_id: int):
     })
 
 
+@login_required
+def dm_messages_json(request, user_id: int):
+    """Return DM thread messages after a given id for lightweight polling."""
+    other = get_object_or_404(User, pk=user_id)
+    if other == request.user:
+        return JsonResponse({'messages': []})
+
+    after_id = request.GET.get('after')
+    try:
+        after_id_int = int(after_id) if after_id is not None else 0
+    except ValueError:
+        after_id_int = 0
+
+    qs = Message.objects.filter(
+        Q(sender=request.user, receiver=other) | Q(sender=other, receiver=request.user)
+    ).select_related('sender').order_by('sent_at', 'id')
+
+    if after_id_int:
+        qs = qs.filter(id__gt=after_id_int)
+
+    # Mark incoming messages as read when fetched
+    Message.objects.filter(sender=other, receiver=request.user, is_read=False).update(is_read=True)
+
+    payload = []
+    for m in qs[:200]:
+        payload.append({
+            'id': m.id,
+            'body': m.body,
+            'sender_id': m.sender_id,
+            'sender_username': m.sender.username,
+            'sent_at': m.sent_at.isoformat() if m.sent_at else None,
+            'sent_at_display': m.sent_at.strftime('%d %b, %H:%M') if m.sent_at else '',
+            'is_flagged': bool(getattr(m, 'is_flagged', False)),
+            'flag_reason': getattr(m, 'flag_reason', '') or '',
+        })
+
+    return JsonResponse({'messages': payload})
+
+
 from .models import Channel, ChannelMessage
 from .forms import ChannelForm, ChannelMessageForm
 
@@ -189,3 +229,39 @@ def channel_detail(request, pk):
         'form': form,
         'channels': channels,
     })
+
+
+@login_required
+def channel_messages_json(request, pk: int):
+    """Return channel messages after a given id for lightweight polling."""
+    channel = get_object_or_404(Channel, pk=pk)
+
+    if request.user not in channel.members.all():
+        return JsonResponse({'messages': []}, status=403)
+
+    after_id = request.GET.get('after')
+    try:
+        after_id_int = int(after_id) if after_id is not None else 0
+    except ValueError:
+        after_id_int = 0
+
+    qs = channel.messages.select_related('sender').order_by('sent_at', 'id')
+    if after_id_int:
+        qs = qs.filter(id__gt=after_id_int)
+
+    payload = []
+    for msg in qs[:200]:
+        payload.append({
+            'id': msg.id,
+            'body': msg.body,
+            'sender_id': msg.sender_id,
+            'sender_name': msg.sender.get_full_name() or msg.sender.username,
+            'sent_at': msg.sent_at.isoformat() if msg.sent_at else None,
+            'sent_at_display': msg.sent_at.strftime('%d %b %Y, %H:%M') if msg.sent_at else '',
+            'is_flagged': bool(getattr(msg, 'is_flagged', False)),
+            'flag_reason': getattr(msg, 'flag_reason', '') or '',
+            'sentiment_label': getattr(msg, 'sentiment_label', '') or '',
+            'sentiment_score': getattr(msg, 'sentiment_score', None),
+        })
+
+    return JsonResponse({'messages': payload})

@@ -43,7 +43,7 @@
         <div style="padding:18px 20px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:flex-start;">
             <div>
-              <div style="font-weight:600; color:var(--navy); font-size:0.9rem;">{{ a.title }}</div>
+              <div style="font-weight:600; color:var(--text-1); font-size:0.9rem;">{{ a.title }}</div>
               <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
                 By {{ a.teacher.get_full_name }} · Due {{ a.deadline|date:"d M Y, H:i" }}
               </div>
@@ -83,7 +83,7 @@
             </td>
             <td>
               {% if sub.quality_score is not None %}
-              <span style="font-weight:600; color:var(--navy);">{{ sub.quality_score }}/100</span>
+              <span style="font-weight:600; color:var(--text-1);">{{ sub.quality_score }}/100</span>
               {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td><span class="badge badge-{{ sub.status }}">{{ sub.get_status_display }}</span></td>

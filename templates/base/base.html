@@ -5,10 +5,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Acadexa{% endblock %}</title>
+  <script>
+    (function () {
+      try {
+        const stored = localStorage.getItem('acadexa-theme');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/acadexa.css' %}?v=valorant2">
+  <link rel="stylesheet" href="{% static 'css/acadexa.css' %}?v=valorant14">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -92,6 +103,10 @@
         <span class="current">{% block page_title %}dashboard{% endblock %}</span>
       </div>
       <div class="topbar-actions">
+        <button type="button" class="btn btn-ghost btn-sm theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <span class="nav-icon">◐</span>
+          <span class="theme-toggle-label">Theme</span>
+        </button>
         {% if user.is_teacher %}
           <a href="{% url 'assignment_create' %}" class="btn btn-primary btn-sm">+ new assignment</a>
         {% else %}
@@ -114,6 +129,24 @@
   {% block auth_content %}{% endblock %}
 {% endif %}
 
+<script>
+  (function () {
+    const btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    const apply = (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.body.setAttribute('data-theme', theme);
+      try { localStorage.setItem('acadexa-theme', theme); } catch (e) {}
+      const label = btn.querySelector('.theme-toggle-label');
+      if (label) label.textContent = theme === 'light' ? 'Light' : 'Dark';
+    };
+    apply(document.documentElement.getAttribute('data-theme') || 'dark');
+    btn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      apply(current === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
