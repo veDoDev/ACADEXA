@@ -1,43 +1,43 @@
-/* ── Acadexa — Charcoal + Emerald Terminal Theme ── */
+/* ── Acadexa — Valorant-inspired tactical theme ── */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Backgrounds */
-  --bg-base:      #0E0F0F;
-  --bg-surface:   #161818;
-  --bg-elevated:  #1C1F1F;
-  --bg-overlay:   #222626;
-  --bg-hover:     #2A2E2E;
+  --bg-base:      #0F1115;
+  --bg-surface:   #151923;
+  --bg-elevated:  #1B202B;
+  --bg-overlay:   #212633;
+  --bg-hover:     #2A3040;
 
   /* Borders */
-  --border:       #2C3030;
-  --border-md:    #363C3C;
-  --border-bright:#424A4A;
+  --border:       #2D3443;
+  --border-md:    #394255;
+  --border-bright:#4A556B;
 
   /* Text */
-  --text-1:       #E8EDEC;
-  --text-2:       #A8B5B2;
-  --text-3:       #6B7A78;
-  --text-4:       #404A48;
+  --text-1:       #F3F4F6;
+  --text-2:       #C8CED8;
+  --text-3:       #8D95A6;
+  --text-4:       #5B6474;
 
-  /* Emerald accent */
-  --green:        #10B981;
-  --green-2:      #34D399;
-  --green-dim:    #059669;
-  --green-bg:     rgba(16,185,129,0.08);
-  --green-border: rgba(16,185,129,0.22);
-  --green-glow:   0 0 20px rgba(16,185,129,0.15);
+  /* Valorant-style accent */
+  --green:        #E54E4E;
+  --green-2:      #FF6A5B;
+  --green-dim:    #C93A3A;
+  --green-bg:     rgba(229,78,78,0.10);
+  --green-border: rgba(229,78,78,0.30);
+  --green-glow:   0 0 24px rgba(229,78,78,0.20);
 
   /* Status colors */
-  --red:          #F87171;
-  --red-bg:       rgba(248,113,113,0.1);
-  --red-border:   rgba(248,113,113,0.2);
-  --yellow:       #FBBF24;
-  --yellow-bg:    rgba(251,191,36,0.1);
-  --yellow-border:rgba(251,191,36,0.2);
-  --blue:         #60A5FA;
-  --blue-bg:      rgba(96,165,250,0.1);
-  --blue-border:  rgba(96,165,250,0.2);
+  --red:          #FF6A5B;
+  --red-bg:       rgba(255,106,91,0.12);
+  --red-border:   rgba(255,106,91,0.28);
+  --yellow:       #F3C969;
+  --yellow-bg:    rgba(243,201,105,0.12);
+  --yellow-border:rgba(243,201,105,0.28);
+  --blue:         #6CA8FF;
+  --blue-bg:      rgba(108,168,255,0.12);
+  --blue-border:  rgba(108,168,255,0.28);
 
   --sidebar-w:  244px;
   --radius:     8px;
@@ -51,6 +51,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 15px; scroll-behavior: smooth; }
 
+::selection {
+  background: rgba(229,78,78,0.35);
+  color: var(--text-1);
+}
+
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--bg-base);
@@ -58,6 +63,90 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ── GAMING SKIN (uses existing variables only) ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  /* scanlines + soft vignette */
+  background:
+    linear-gradient(to bottom, rgba(18,20,26,0.22), rgba(18,20,26,0.08) 35%, rgba(12,14,20,0.46)),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.018) 0px,
+      rgba(255,255,255,0.018) 1px,
+      rgba(0,0,0,0.000) 3px,
+      rgba(0,0,0,0.000) 6px
+    );
+  mix-blend-mode: overlay;
+  opacity: 0.65;
+}
+
+/* keep app content above skin */
+.layout, .sidebar, .main-content, .topbar { position: relative; z-index: 1; }
+
+/* slightly punchier topbar */
+.topbar {
+  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--bg-surface) 86%, transparent);
+}
+
+/* cards feel more premium */
+.card {
+  border-color: var(--border-md);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.card-header {
+  background:
+    linear-gradient(90deg, rgba(16,185,129,0.10), rgba(0,0,0,0.0) 55%),
+    var(--bg-overlay);
+}
+
+/* buttons pop a bit more */
+.btn-primary {
+  box-shadow: 0 10px 30px rgba(16,185,129,0.18);
+}
+
+.btn-outline {
+  background: color-mix(in srgb, var(--bg-overlay) 40%, transparent);
+}
+
+/* make chat panels look more "in-game" */
+.chat-sidebar, .chat-main {
+  border-color: var(--border-md);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+}
+
+.chat-main-header, .chat-sidebar-header {
+  background:
+    linear-gradient(90deg, rgba(16,185,129,0.10), rgba(0,0,0,0.0) 62%),
+    var(--bg-overlay);
+}
+
+.bubble {
+  border-color: var(--border-md);
+}
+
+/* ── LINKS (remove default blue/purple) ── */
+a,
+a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--text-1);
+}
+
+a:focus-visible {
+  outline: 2px solid rgba(16,185,129,0.45);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* ── SCROLLBAR ── */
@@ -178,9 +267,16 @@ body {
   gap: 9px;
   padding: 7px 10px;
   border-radius: var(--radius-sm);
-  color: var(--text-3);
+  color: var(--text-2);
   text-decoration: none;
   font-size: 0.83rem;
+.chat-link:visited,
+.chat-link:hover,
+.chat-link:focus,
+.chat-link:active {
+  color: inherit;
+  text-decoration: none;
+}
   font-weight: 500;
   transition: all 0.12s;
   margin-bottom: 1px;
@@ -193,6 +289,10 @@ body {
   color: var(--green);
   font-weight: 600;
   border: 1px solid var(--green-border);
+}
+
+.nav-link.active .nav-icon {
+  filter: drop-shadow(0 0 10px rgba(229,78,78,0.35));
 }
 
 .nav-icon { width: 16px; text-align: center; font-size: 0.82rem; flex-shrink: 0; }
@@ -435,6 +535,12 @@ body {
   border: 1px solid transparent;
   transition: all 0.13s;
   white-space: nowrap;
+}
+.btn:visited,
+.btn:hover,
+.btn:focus,
+.btn:active {
+  text-decoration: none;
 }
 
 .btn-primary {

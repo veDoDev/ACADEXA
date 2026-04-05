@@ -10,66 +10,63 @@
       <div class="chat-subtitle">You can access</div>
     </div>
 
-    <nav class="chat-list">
+    <div class="chat-sidebar-list">
       {% for c in channels %}
-        <a class="chat-list-item {% if c.id == channel.id %}is-active{% endif %}" href="{% url 'channel_detail' c.id %}">
-          <div class="chat-list-title"># {{ c.name }}</div>
-          <div class="chat-list-subtitle">{{ c.members.count }} member{{ c.members.count|pluralize }}</div>
+        <a class="chat-link {% if c.id == channel.id %}active{% endif %}" href="{% url 'channel_detail' c.id %}">
+          <div style="min-width:0;">
+            <div class="chat-link-title"># {{ c.name }}</div>
+            <div class="chat-link-sub">{{ c.members.count }} member{{ c.members.count|pluralize }}</div>
+          </div>
         </a>
       {% empty %}
-        <div class="chat-empty">No channels yet.</div>
+        <div style="color:var(--text-3); padding:10px;">No channels yet.</div>
       {% endfor %}
-    </nav>
+    </div>
   </aside>
 
   <main class="chat-main">
-    <header class="chat-header">
+    <div class="chat-main-header">
       <div>
         <div class="chat-title"># {{ channel.name }}</div>
-        <div class="chat-subtitle">{{ channel.description|default:"Channel chat" }}</div>
+        <div class="chat-hint">{{ channel.description|default:"Channel chat" }}</div>
+        <div style="margin-top:6px; color:var(--text-3); font-size:0.72rem;">Owner: {{ channel.owner.get_full_name|default:channel.owner.username }} · Members: {{ channel.members.count }}</div>
       </div>
-      <div class="chat-header-meta">
-        <span class="meta-pill">Owner: {{ channel.owner.get_full_name|default:channel.owner.username }}</span>
-        <span class="meta-pill">Members: {{ channel.members.count }}</span>
-      </div>
-    </header>
+    </div>
 
-    <section class="chat-thread">
+    <div class="chat-messages" id="chat-scroll">
       {% for msg in messages_list %}
-        <div class="chat-row {% if msg.sender_id == request.user.id %}is-me{% endif %}">
-          <div class="bubble">
-            <div class="bubble-meta">
-              <span class="bubble-author">{{ msg.sender.get_full_name|default:msg.sender.username }}</span>
-              <span class="bubble-time">{{ msg.sent_at|date:"d M Y, H:i" }}</span>
-            </div>
-            <div class="bubble-body">{{ msg.body|linebreaksbr }}</div>
-
-            {% if msg.is_flagged or msg.sentiment_label %}
-              <div class="bubble-badges">
-                {% if msg.is_flagged %}
-                  <span class="pill pill-danger">Flagged{% if msg.flag_reason %}: {{ msg.flag_reason }}{% endif %}</span>
-                {% endif %}
-                {% if msg.sentiment_label %}
-                  <span class="pill pill-info">Sentiment: {{ msg.sentiment_label }}{% if msg.sentiment_score != None %} ({{ msg.sentiment_score|floatformat:2 }}){% endif %}</span>
-                {% endif %}
-              </div>
-            {% endif %}
+        <div class="bubble {% if msg.sender_id == request.user.id %}me{% endif %}">
+          <div>{{ msg.body|linebreaksbr }}</div>
+          <div class="meta">
+            <span>{% if msg.sender_id == request.user.id %}me{% else %}{{ msg.sender.get_full_name|default:msg.sender.username }}{% endif %}</span>
+            <span>{{ msg.sent_at|date:"d M Y, H:i" }}</span>
           </div>
+
+          {% if msg.is_flagged and msg.flag_reason %}
+            <div style="margin-top:6px; color:var(--text-3); font-size:0.75rem;">flag: {{ msg.flag_reason }}</div>
+          {% endif %}
+          {% if msg.sentiment_label %}
+            <div style="margin-top:6px; color:var(--text-3); font-size:0.75rem;">sentiment: {{ msg.sentiment_label }}{% if msg.sentiment_score != None %} ({{ msg.sentiment_score|floatformat:2 }}){% endif %}</div>
+          {% endif %}
         </div>
       {% empty %}
-        <div class="chat-empty">No messages yet.</div>
+        <div style="color:var(--text-3); text-align:center; padding:40px 0;">No messages yet.</div>
       {% endfor %}
-    </section>
+    </div>
 
-    <footer class="chat-compose">
-      <form method="POST" class="chat-compose-form">
+    <div class="chat-compose">
+      <form method="POST" style="display:contents;">
         {% csrf_token %}
-        <div class="chat-compose-input">
-          {{ form.body }}
-        </div>
+        {{ form.body }}
         <button type="submit" class="btn btn-primary">Send</button>
       </form>
-    </footer>
+    </div>
   </main>
 </div>
+
+<script>
+  // keep scroll at bottom
+  const el = document.getElementById('chat-scroll');
+  if (el) el.scrollTop = el.scrollHeight;
+</script>
 {% endblock %}

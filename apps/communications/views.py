@@ -47,12 +47,9 @@ def message_detail(request, pk):
 @login_required
 def dm_home(request):
     """Teams-like direct messages home: search people + recent threads."""
-    # Search people (students see teachers; teachers see students)
+    # Search people (everyone can DM everyone in this demo)
     q = (request.GET.get('q') or '').strip()
-    if request.user.role == 'student':
-        people_qs = User.objects.filter(role='teacher')
-    else:
-        people_qs = User.objects.filter(role='student')
+    people_qs = User.objects.exclude(id=request.user.id)
 
     if q:
         people_qs = people_qs.filter(
@@ -93,10 +90,7 @@ def dm_chat(request, user_id: int):
     if other == request.user:
         return redirect('dm_home')
 
-    # enforce role-based chatting like existing form behavior
-    if request.user.role == other.role:
-        messages.error(request, 'You can only chat with the opposite role in this demo.')
-        return redirect('dm_home')
+    # Allow chatting with any other user
 
     thread_qs = Message.objects.filter(
         Q(sender=request.user, receiver=other) | Q(sender=other, receiver=request.user)
